@@ -2,7 +2,9 @@
 class Board {
 public:
 	Board();
-	int board[8][8];
-	void printBoard();
+	static int board[8][8];
+	static void printBoard();
+	bool isCheck();
+	bool isCheckmate();
 };
 

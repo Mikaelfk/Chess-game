@@ -1,7 +1,7 @@
 #include "Board.h"
 #include <iostream>
 
-//create constructor for board class
+int Board::board[8][8] = {};
 
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
@@ -18,5 +18,15 @@ void Board::printBoard() {
 		}
 		std::cout << std::endl;
 	}
+}
+
+bool Board::isCheck() {
+	std::cout << "Check" << std::endl;
+	return true;
+}
+
+bool Board::isCheckmate() {
+	std::cout << "Checkmate" << std::endl;
+	return true;
 }
 
