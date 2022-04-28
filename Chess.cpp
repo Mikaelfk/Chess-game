@@ -2,8 +2,12 @@
 //
 
 #include <iostream>
+#include "Board.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+	Board board;
+	//print 2 dimensional array board.board
+	board.printBoard();
+
 }
