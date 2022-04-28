@@ -29,7 +29,7 @@ Black:
 int main()
 {
 	// Initialize board
-	Board board;
+    Board::getInstance;
 
 	typedef std::vector<ChessPawn> PawnVector;
 	PawnVector whitePawns;
