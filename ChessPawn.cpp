@@ -1,5 +1,4 @@
 #include "ChessPawn.h"
-#include "Board.h"
 
 ChessPawn::ChessPawn(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {

@@ -1,6 +1,8 @@
 #include <iostream>
+#include <vector>
 #include "Board.h"
 #include "ChessPawn.h"
+#include "ChessKnight.h"
 
 /*
 Each piece type is represented with a number:
@@ -24,11 +26,20 @@ Black:
 
 int main()
 {
+	// Initialize board
 	Board board;
-	ChessPawn pawn(6, 0, true);
-	ChessPawn pawn2(5, 1, false);
-	Board::printBoard();
-	pawn.move(pawn.position_x, pawn.position_y, 5, 1);
-	std::cout << pawn.position_x << " " << pawn.position_y << std::endl;
+
+	typedef std::vector<ChessPawn> PawnVector;
+	PawnVector whitePawns;
+	PawnVector blackPawns;
+
+	for (int i = 0; i < 8; i++) {
+		whitePawns.push_back(ChessPawn(6, i, true));
+		blackPawns.push_back(ChessPawn(1, i, false));
+	}
+
+	ChessKnight knight(7, 1, true);
+	ChessKnight knight2(7, 6, true);
+	knight.move(knight.position_x, knight.position_y, 6, 3);
 	Board::printBoard();
 }

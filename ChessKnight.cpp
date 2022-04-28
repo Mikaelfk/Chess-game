@@ -33,7 +33,7 @@ bool ChessKnight::isMoveLegal(int& x1, int& y1, int& x2, int& y2) {
 		} else {
 			return false;
 		}
-	} else if (Board::board[x2][y2] == 0 || Board::board[x2][y2] <= 6) {
+	} else if (!isWhite && (Board::board[x2][y2] == 0 || Board::board[x2][y2] <= 6)) {
 		if (x1 == x2 - 2 && y1 == y2 - 1) {
 			return true;
 		} else if (x1 == x2 - 2 && y1 == y2 + 1) {
