@@ -3,6 +3,7 @@
 #include "Board.h"
 #include "ChessPawn.h"
 #include "ChessKnight.h"
+#include "ChessBishop.h"
 
 /*
 Each piece type is represented with a number:
@@ -38,8 +39,8 @@ int main()
 		blackPawns.push_back(ChessPawn(1, i, false));
 	}
 
-	ChessKnight knight(7, 1, true);
-	ChessKnight knight2(7, 6, true);
-	knight.move(knight.position_x, knight.position_y, 6, 3);
+	ChessBishop bishop(5, 4, true);
+	Board::printBoard();
+	std::cout << std::endl;
 	Board::printBoard();
 }
