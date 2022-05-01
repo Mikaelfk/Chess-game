@@ -1,18 +1,19 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <tuple>
 #include "ChessPiece.h"
 
-typedef std::vector<std::vector<ChessPiece>> ChessBoard;
+typedef std::vector<std::vector<std::unique_ptr<ChessPiece>>> ChessPieceMatrix;
 
 class Board {
 private:
 	Board();
 public:
 	static Board& getInstance();
-	static int board[8][8];
-	static ChessBoard piecesBoard;
+	static ChessPieceMatrix board;
 	static void printBoard();
+	static std::tuple<int, int> getKingPosition(bool isWhite);
 	static bool isCheck(bool isWhite);
 	static bool isCheckmate();
 

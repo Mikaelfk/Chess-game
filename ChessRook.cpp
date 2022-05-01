@@ -7,17 +7,16 @@ ChessRook::ChessRook(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	} else {
 		this->pieceType = 10;
 	}
-	Board::board[x][y] = this->pieceType;
 }
 
 bool ChessRook::isMoveLegal(int& x, int& y) {
 	// Check if friendly piece is in the position
 	if (isWhite) {
-		if (Board::board[x][y] <= 6 && Board::board[x][y] >= 1) {
+		if (Board::board[x][y]->pieceType <= 6 && Board::board[x][y]->pieceType >= 1) {
 			return false;
 		}
 	} else {
-		if (Board::board[x][y] >= 7) {
+		if (Board::board[x][y]->pieceType >= 7) {
 			return false;
 		}
 	}
@@ -25,13 +24,13 @@ bool ChessRook::isMoveLegal(int& x, int& y) {
 	if (x == this->position_x) {
 		if (y > this->position_y) {
 			for (int i = this->position_y + 1; i < y; i++) {
-				if (Board::board[x][i] != 0) {
+				if (Board::board[x][i]->pieceType != 0) {
 					return false;
 				}
 			}
 		} else {
 			for (int i = this->position_y - 1; i > y; i--) {
-				if (Board::board[x][i] != 0) {
+				if (Board::board[x][i]->pieceType != 0) {
 					return false;
 				}
 			}
@@ -39,13 +38,13 @@ bool ChessRook::isMoveLegal(int& x, int& y) {
 	} else if (y == this->position_y) {
 		if (x > this->position_x) {
 			for (int i = this->position_x + 1; i < x; i++) {
-				if (Board::board[i][y] != 0) {
+				if (Board::board[i][y]->pieceType != 0) {
 					return false;
 				}
 			}
 		} else {
 			for (int i = this->position_x - 1; i > x; i--) {
-				if (Board::board[i][y] != 0) {
+				if (Board::board[i][y]->pieceType != 0) {
 					return false;
 				}
 			}

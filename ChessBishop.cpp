@@ -4,11 +4,10 @@
 
 ChessBishop::ChessBishop(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {
-		this->pieceType = 3;
-	} else {
-		this->pieceType = 9;
+	this->pieceType = 3;
+} else {
+	this->pieceType = 9;
 	}
-	Board::board[x][y] = this->pieceType;
 }
 
 bool ChessBishop::isMoveLegal(int& x, int& y) {
@@ -23,11 +22,11 @@ bool ChessBishop::isMoveLegal(int& x, int& y) {
 
 	// Check if friendly piece in place
 	if (isWhite) {
-		if (Board::board[x][y] <= 6 && Board::board[x][y] > 0) {
+		if (Board::board[x][y]->pieceType <= 6 && Board::board[x][y]->pieceType > 0) {
 			return false;
 		}
 	} else {
-		if (Board::board[x][y] >= 7 && Board::board[x][y] <= 12) {
+		if (Board::board[x][y]->pieceType >= 7 && Board::board[x][y]->pieceType <= 12) {
 			return false;
 		}
 	}
@@ -36,13 +35,13 @@ bool ChessBishop::isMoveLegal(int& x, int& y) {
 	if (xDiff > 0) {
 		if (yDiff > 0) {
 			for (int i = 1; i < xDiff; i++) {
-				if (Board::board[this->position_x + i][this->position_y + i] != 0) {
+				if (Board::board[this->position_x + i][this->position_y + i]->pieceType != 0) {
 					return false;
 				}
 			}
 		} else {
 			for (int i = 1; i < xDiff; i++) {
-				if (Board::board[this->position_x + i][this->position_y - i] != 0) {
+				if (Board::board[this->position_x + i][this->position_y - i]->pieceType != 0) {
 					return false;
 				}
 			}
@@ -50,13 +49,13 @@ bool ChessBishop::isMoveLegal(int& x, int& y) {
 	} else {
 		if (yDiff > 0) {
 			for (int i = 1; i < -xDiff; i++) {
-				if (Board::board[this->position_x - i][this->position_y + i] != 0) {
+				if (Board::board[this->position_x - i][this->position_y + i]->pieceType != 0) {
 					return false;
 				}
 			}
 		} else {
 			for (int i = 1; i < -xDiff; i++) {
-				if (Board::board[this->position_x - i][this->position_y - i] != 0) {
+				if (Board::board[this->position_x - i][this->position_y - i]->pieceType != 0) {
 					return false;
 				}
 			}
