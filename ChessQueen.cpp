@@ -1,4 +1,5 @@
 #include "ChessQueen.h"
+#include "Board.h"
 
 ChessQueen::ChessQueen(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {

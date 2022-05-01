@@ -1,8 +1,8 @@
 #pragma once
-#include "Board.h"
 
 class ChessPiece {
 public:
+	ChessPiece();
 	ChessPiece(int x, int y, bool isWhite);
 	int position_x;
 	int position_y;

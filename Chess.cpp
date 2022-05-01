@@ -30,20 +30,6 @@ Black:
 int main()
 {
 	// Initialize board
-    Board::getInstance;
-
-	typedef std::vector<ChessPawn> PawnVector;
-	PawnVector whitePawns;
-	PawnVector blackPawns;
-
-	for (int i = 0; i < 8; i++) {
-		whitePawns.push_back(ChessPawn(6, i, true));
-		blackPawns.push_back(ChessPawn(1, i, false));
-	}
-
-	ChessQueen queen(5, 4, true);
-	Board::printBoard();
-	queen.move(5, 5);
-	std::cout << std::endl;
+    Board::getInstance();
 	Board::printBoard();
 }

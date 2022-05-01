@@ -1,5 +1,6 @@
-#include "ChessKing.h"
 #include <cmath>
+#include "ChessKing.h"
+#include "Board.h"
 
 ChessKing::ChessKing(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {
@@ -7,6 +8,7 @@ ChessKing::ChessKing(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	} else {
 		this->pieceType = 12;
 	}
+	Board::board[x][y] = this->pieceType;
 }
 
 bool ChessKing::isMoveLegal(int& x, int& y) {

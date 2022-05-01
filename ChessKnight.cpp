@@ -1,4 +1,5 @@
 #include "ChessKnight.h"
+#include "Board.h"
 
 ChessKnight::ChessKnight(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {
