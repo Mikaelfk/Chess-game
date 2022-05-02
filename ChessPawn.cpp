@@ -9,7 +9,7 @@ ChessPawn::ChessPawn(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	}
 }
 
-bool ChessPawn::isMoveLegal(int& x, int& y) {
+bool ChessPawn::isMoveLegal(int x, int y) {
 	// Check if pawn move is legal
 	if (isWhite) {
 		if (this->position_x == x + 1 && this->position_y == y && Board::board[x][y]->pieceType == 0) {

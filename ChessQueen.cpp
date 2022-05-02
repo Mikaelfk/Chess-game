@@ -9,7 +9,7 @@ ChessQueen::ChessQueen(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	}
 }
 
-bool ChessQueen::isMoveLegal(int& x, int& y) {
+bool ChessQueen::isMoveLegal(int x, int y) {
 	// Check if a friendly piece is on the x and y coordinates
 	if (isWhite) {
 		if (Board::board[x][y]->pieceType != 0 && Board::board[x][y]->pieceType <= 6) {

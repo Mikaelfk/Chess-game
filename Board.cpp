@@ -105,7 +105,7 @@ bool Board::isCheck(bool color) {
 					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(true);
 					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
 						std::cout << "Check on White" << std::endl;
-						Board::isCheckmate();
+						Board::isCheckmate(true);
 						return true;
 					}
 				}
@@ -122,7 +122,7 @@ bool Board::isCheck(bool color) {
 				std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(false);
 				if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
 					std::cout << "Check on Black" << std::endl;
-					Board::isCheckmate();
+					Board::isCheckmate(false);
 					return true;
 				}
 			}
@@ -132,8 +132,28 @@ bool Board::isCheck(bool color) {
 	return false;
 }
 
-bool Board::isCheckmate() {
-	//std::cout << "Checkmate" << std::endl;
-	return true;
+// Check if king is in checkmate, if isWhite is true, check white king, else check black king
+bool Board::isCheckmate(bool isWhite) {
+	int kingPosition_x, kingPosition_y;
+	std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(isWhite);
+	// Check if king can move to any square
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			if(Board::board[i][j]->position_x == kingPosition_x && Board::board[i][j]->position_y == kingPosition_y) {
+				if (!(Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y + 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y - 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y + 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y - 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y + 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y - 1) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y) ||
+					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y))) {
+					std::cout << "Checkmate" << std::endl;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 

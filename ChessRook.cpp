@@ -9,7 +9,7 @@ ChessRook::ChessRook(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	}
 }
 
-bool ChessRook::isMoveLegal(int& x, int& y) {
+bool ChessRook::isMoveLegal(int x, int y) {
 	// Check if friendly piece is in the position
 	if (isWhite) {
 		if (Board::board[x][y]->pieceType <= 6 && Board::board[x][y]->pieceType >= 1) {

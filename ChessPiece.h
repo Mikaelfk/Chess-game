@@ -9,7 +9,7 @@ public:
 	int pieceType;
 	bool isWhite;
 	void move(int x, int y);
-	virtual bool isMoveLegal(int& x, int& y) {
+	virtual bool isMoveLegal(int x, int y) {
 		return false;
 	};
 };
