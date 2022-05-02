@@ -27,15 +27,26 @@ void ChessPiece::move(int x, int y) {
 		return;
 	}
 
-	// make logic for checking if the new moves puts the friendly king in check before allowing it.
+	// Moves the piece to the new position
+	ChessPiece* temp = Board::board[x][y];
 
-	//Moves the piece to the new position
-	
-	delete Board::board[x][y];
 	Board::board[x][y] = this;
 	Board::board[position_x][position_y] = new ChessPiece();
+	// Check if the move puts the friendly king in check
+	if (Board::isCheck(this->isWhite)) {
+		// undo move
+		delete Board::board[this->position_x][this->position_y];
+		Board::board[this->position_x][this->position_y] = this;
+		Board::board[x][y] = temp;
+		std::cout << "Move is not legal" << std::endl;
+		return;
+	}
+
+	// Change the position of the piece
+	delete temp;
 	this->position_x = x;
 	this->position_y = y;
 
+	// Check if the move puts the enemy king in check
 	Board::isCheck(!this->isWhite);
 }

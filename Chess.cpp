@@ -33,6 +33,8 @@ int main()
     Board::getInstance();
 	Board::board[1][4]->move(3, 4);
 	Board::printBoard();
-	Board::board[3][4]->move(4, 4);
+	Board::board[6][4]->move(4, 4);
+	Board::board[1][3]->move(2, 3);
+	Board::board[7][5]->move(3, 1);
 	Board::printBoard();
 }
