@@ -13,13 +13,14 @@ public:
 	static ChessPieceMatrix board;
 	static bool isCheckOnWhite;
 	static bool isCheckOnBlack;
+	static bool isCheckMate;
 	static bool whiteToMove;
 	
 	static Board& getInstance();
 	static void printBoard();
 	static std::tuple<int, int> getKingPosition(bool isWhite);
 	static bool isCheck(bool isWhite);
-	static bool isCheckmate(bool isWhite);
+	static void isCheckmate(bool isWhite);
 
 	// Delete copy constructor and assignment operator so that we can't copy the singleton
 	Board(Board const&) = delete;

@@ -19,7 +19,7 @@ ChessPiece::ChessPiece(int x, int y, bool isWhite)
 }
 
 void ChessPiece::move(int x, int y) {
-	if(Board::whiteToMove != isWhite) {
+	if(Board::whiteToMove != isWhite || Board::isCheckMate) {
 		return;
 	}
 	if (!isMoveLegal(x, y)) {

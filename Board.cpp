@@ -13,6 +13,7 @@ std::vector<std::vector<ChessPiece*>> Board::board(8);
 bool Board::isCheckOnWhite = false;
 bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
+bool Board::isCheckMate = false;
 
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
@@ -133,7 +134,7 @@ bool Board::isCheck(bool color) {
 }
 
 // Check if king is in checkmate, if isWhite is true, check white king, else check black king
-bool Board::isCheckmate(bool isWhite) {
+void Board::isCheckmate(bool isWhite) {
 	int kingPosition_x, kingPosition_y;
 	std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(isWhite);
 	// Check if king can move to any square
@@ -149,11 +150,10 @@ bool Board::isCheckmate(bool isWhite) {
 					!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y) &&
 					!Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y)) {
 					std::cout << "Checkmate" << std::endl;
-					return true;
+					isCheckMate = true;
 				}
 			}
 		}
 	}
-	return false;
 }
 

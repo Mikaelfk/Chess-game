@@ -32,7 +32,7 @@ bool ChessKing::isMoveLegal(int x, int y) {
 		return false;
 	}
 
-	// TODO: Check if opposite color has valid moves to x, y position
+	// Check if any opposing pieces have line of sight to the x, y position.
 	if (this->isWhite) {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
