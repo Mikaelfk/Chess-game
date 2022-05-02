@@ -4,7 +4,7 @@
 #include <tuple>
 #include "ChessPiece.h"
 
-typedef std::vector<std::vector<std::unique_ptr<ChessPiece>>> ChessPieceMatrix;
+typedef std::vector<std::vector<ChessPiece*>> ChessPieceMatrix;
 
 class Board {
 private:

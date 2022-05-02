@@ -9,46 +9,52 @@
 #include "ChessKing.h"	
 
 
-std::vector<std::vector<std::unique_ptr<ChessPiece>>> Board::board(8);
+std::vector<std::vector<ChessPiece*>> Board::board(8);
 
 Board::Board() {
 
 	for (int i = 0; i < 8; i++) {
 		//Create empyy arrays for each row with size of 8
-		board.at(i) = std::vector<std::unique_ptr<ChessPiece>>(8);
+		board.at(i) = std::vector<ChessPiece*>(8);
 	}
 	
 	// Initialize with empty pieces
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			board[i][j] = std::make_unique<ChessPiece>();
+			board[i][j] = new ChessPiece();
 		}
 	}
 
 	// Create all pieces in board
 	for (int i = 0; i < 8; i++) {
-		board[1][i] = std::make_unique<ChessPawn>(1, i, 0);
-		board[6][i] = std::make_unique<ChessPawn>(6, i, 1);
+		delete board[1][i];
+		delete board[6][i];
+		board[1][i] = new ChessPawn(1, i, 0);
+		board[6][i] = new ChessPawn(6, i, 1);
 	}
 
+	for (int i = 0; i < 8; i++) {
+		delete board[0][i];
+		delete board[7][i];
+	}
 	// Should probably refactor this later :)
-	board[0][0] = std::make_unique<ChessRook>(0, 0, 0);
-	board[0][1] = std::make_unique<ChessKnight>(0, 1, 0);
-	board[0][2] = std::make_unique<ChessBishop>(0, 2, 0);
-	board[0][3] = std::make_unique<ChessQueen>(0, 3, 0);
-	board[0][4] = std::make_unique<ChessKing>(0, 4, 0);
-	board[0][5] = std::make_unique<ChessBishop>(0, 5, 0);
-	board[0][6] = std::make_unique<ChessKnight>(0, 6, 0);
-	board[0][7] = std::make_unique<ChessRook>(0, 7, 0);
+	board[0][0] = new ChessRook(0, 0, 0);
+	board[0][1] = new ChessKnight(0, 1, 0);
+	board[0][2] = new ChessBishop(0, 2, 0);
+	board[0][3] = new ChessQueen(0, 3, 0);
+	board[0][4] = new ChessKing(0, 4, 0);
+	board[0][5] = new ChessBishop(0, 5, 0);
+	board[0][6] = new ChessKnight(0, 6, 0);
+	board[0][7] = new ChessRook(0, 7, 0);
 
-	board[7][0] = std::make_unique<ChessRook>(7, 0, 1);
-	board[7][1] = std::make_unique<ChessKnight>(7, 1, 1);
-	board[7][2] = std::make_unique<ChessBishop>(7, 2, 1);
-	board[7][3] = std::make_unique<ChessQueen>(7, 3, 1);
-	board[7][4] = std::make_unique<ChessKing>(7, 4, 1);
-	board[7][5] = std::make_unique<ChessBishop>(7, 5, 1);
-	board[7][6] = std::make_unique<ChessKnight>(7, 6, 1);
-	board[7][7] = std::make_unique<ChessRook>(7, 7, 1);
+	board[7][0] = new ChessRook(7, 0, 1);
+	board[7][1] = new ChessKnight(7, 1, 1);
+	board[7][2] = new ChessBishop(7, 2, 1);
+	board[7][3] = new ChessQueen(7, 3, 1);
+	board[7][4] = new ChessKing(7, 4, 1);
+	board[7][5] = new ChessBishop(7, 5, 1);
+	board[7][6] = new ChessKnight(7, 6, 1);
+	board[7][7] = new ChessRook(7, 7, 1);
 }
 
 Board& Board::getInstance() {

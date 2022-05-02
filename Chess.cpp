@@ -31,8 +31,8 @@ int main()
 {
 	// Initialize board
     Board::getInstance();
-	std::cout << Board::board[1][4]->position_x << std::endl;
 	Board::board[1][4]->move(3, 4);
-	std::cout << Board::board[1][4]->position_x << std::endl;
+	Board::printBoard();
+	Board::board[3][4]->move(4, 4);
 	Board::printBoard();
 }

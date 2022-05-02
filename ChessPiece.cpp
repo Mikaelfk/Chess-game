@@ -31,12 +31,11 @@ void ChessPiece::move(int x, int y) {
 
 	//Moves the piece to the new position
 	
-	// Move the unique pointer to the new position
-	
-	
-
-	//Board::board[x][y] = this;
-	Board::board[position_x][position_y] = std::make_unique<ChessPiece>();
+	delete Board::board[x][y];
+	Board::board[x][y] = this;
+	Board::board[position_x][position_y] = new ChessPiece();
+	this->position_x = x;
+	this->position_y = y;
 
 	Board::isCheck(!this->isWhite);
 }
