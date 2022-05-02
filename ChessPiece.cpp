@@ -19,6 +19,9 @@ ChessPiece::ChessPiece(int x, int y, bool isWhite)
 }
 
 void ChessPiece::move(int x, int y) {
+	if(Board::whiteToMove != isWhite) {
+		return;
+	}
 	if (!isMoveLegal(x, y)) {
 		return;
 	}
@@ -42,11 +45,14 @@ void ChessPiece::move(int x, int y) {
 		return;
 	}
 
-	// Change the position of the piece
+	// Change the position of the piece and delete the old one
 	delete temp;
 	this->position_x = x;
 	this->position_y = y;
 
 	// Check if the move puts the enemy king in check
 	Board::isCheck(!this->isWhite);
+
+	// Change who's turn it is
+	Board::whiteToMove = !Board::whiteToMove;
 }

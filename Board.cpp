@@ -10,9 +10,11 @@
 
 
 std::vector<std::vector<ChessPiece*>> Board::board(8);
+bool Board::isCheckOnWhite = false;
+bool Board::isCheckOnBlack = false;
+bool Board::whiteToMove = true;
 
 Board::Board() {
-
 	for (int i = 0; i < 8; i++) {
 		//Create empyy arrays for each row with size of 8
 		board.at(i) = std::vector<ChessPiece*>(8);
@@ -131,7 +133,7 @@ bool Board::isCheck(bool color) {
 }
 
 bool Board::isCheckmate() {
-	std::cout << "Checkmate" << std::endl;
+	//std::cout << "Checkmate" << std::endl;
 	return true;
 }
 

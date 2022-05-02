@@ -29,7 +29,6 @@ bool ChessQueen::isMoveLegal(int& x, int& y) {
 	}
 	
 	// Check if a piece is in the way
-	// Github copilot made this, idk man
 	if (x == this->position_x) {
 		if (y > this->position_y) {
 			for (int i = this->position_y + 1; i < y; i++) {
@@ -83,7 +82,6 @@ bool ChessQueen::isMoveLegal(int& x, int& y) {
 			}
 		}
 	}
-	
 	return true;
 }
 

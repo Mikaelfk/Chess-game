@@ -11,11 +11,9 @@ ChessBishop::ChessBishop(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite)
 }
 
 bool ChessBishop::isMoveLegal(int& x, int& y) {
-	// x = 3, y = 6
-	// position_x = 5 , position_y = 4
+	// Check if the move is diagonal
 	int xDiff = x - this->position_x;
 	int yDiff = y - this->position_y;
-	// Check if the move is diagonal
 	if (std::abs(xDiff) != std::abs(yDiff)) {
 		return false;
 	}	

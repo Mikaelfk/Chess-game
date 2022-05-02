@@ -31,10 +31,13 @@ int main()
 {
 	// Initialize board
     Board::getInstance();
+
+	Board::board[6][4]->move(4, 4);
 	Board::board[1][4]->move(3, 4);
 	Board::printBoard();
-	Board::board[6][4]->move(4, 4);
-	Board::board[1][3]->move(2, 3);
 	Board::board[7][5]->move(3, 1);
+	Board::board[1][0]->move(2, 0);
+
+	Board::board[3][1]->move(4, 2);
 	Board::printBoard();
 }

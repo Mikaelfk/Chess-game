@@ -10,8 +10,12 @@ class Board {
 private:
 	Board();
 public:
-	static Board& getInstance();
 	static ChessPieceMatrix board;
+	static bool isCheckOnWhite;
+	static bool isCheckOnBlack;
+	static bool whiteToMove;
+	
+	static Board& getInstance();
 	static void printBoard();
 	static std::tuple<int, int> getKingPosition(bool isWhite);
 	static bool isCheck(bool isWhite);
