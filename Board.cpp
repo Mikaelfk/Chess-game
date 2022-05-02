@@ -140,14 +140,14 @@ bool Board::isCheckmate(bool isWhite) {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
 			if(Board::board[i][j]->position_x == kingPosition_x && Board::board[i][j]->position_y == kingPosition_y) {
-				if (!(Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y + 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y - 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y + 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y - 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y + 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y - 1) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y) ||
-					Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y))) {
+				if (!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y + 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y - 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y + 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y - 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y + 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y - 1) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y) &&
+					!Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y)) {
 					std::cout << "Checkmate" << std::endl;
 					return true;
 				}

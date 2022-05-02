@@ -40,10 +40,23 @@ int main()
 
 	Board::board[3][1]->move(4, 2);
 	*/
+	/*
+	// White checkmated in 2 moves
 	Board::board[6][5]->move(5, 5);
 	Board::board[1][4]->move(3, 4);
 
 	Board::board[6][6]->move(4, 6);
 	Board::board[0][3]->move(4, 7);
+	*/
+
+	// Checkmate black in 3 moves
+	Board::board[6][4]->move(4, 4);
+	Board::board[1][5]->move(3, 5);
+
+	Board::board[6][5]->move(4, 5);
+	Board::board[1][6]->move(3, 6);
+
+	Board::board[7][3]->move(3, 7);
+	
 	Board::printBoard();
 }

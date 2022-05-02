@@ -26,20 +26,30 @@ bool ChessKing::isMoveLegal(int x, int y) {
 			return false;
 		}
 	}
-	
+
 	// Check if the move is valid:
 	if (std::abs(x - this->position_x) > 1 || abs(y - this->position_y) > 1) {
 		return false;
 	}
 
 	// TODO: Check if opposite color has valid moves to x, y position
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			if (Board::board[i][j]->pieceType >= 7 && Board::board[i][j]->isMoveLegal(x, y)) {
-				return false;
+	if (this->isWhite) {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (Board::board[i][j]->pieceType >= 7 && Board::board[i][j]->isMoveLegal(x, y)) {
+					return false;
+				}
 			}
 		}
-	}
+	} else {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (Board::board[i][j]->pieceType >= 1 && Board::board[i][j]->pieceType <= 6 && Board::board[i][j]->isMoveLegal(x, y)) {
+					return false;
+				}
+			}
+		}
 
+	}
 	return true;
 }
