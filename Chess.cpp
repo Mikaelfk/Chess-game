@@ -31,15 +31,16 @@ int main()
 {
 	// Initialize board
     Board::getInstance();
-	/*
 	Board::board[6][4]->move(4, 4);
 	Board::board[1][4]->move(3, 4);
-	Board::printBoard();
-	Board::board[7][5]->move(3, 1);
-	Board::board[1][0]->move(2, 0);
 
-	Board::board[3][1]->move(4, 2);
-	*/
+	Board::board[7][5]->move(4, 2);
+	Board::board[1][3]->move(3, 3);
+
+	Board::board[4][2]->move(3, 1);
+	Board::board[0][4]->move(1, 4);
+	//Board::board[1][2]->move(2, 2);
+
 	/*
 	// White checkmated in 2 moves
 	Board::board[6][5]->move(5, 5);
@@ -49,6 +50,7 @@ int main()
 	Board::board[0][3]->move(4, 7);
 	*/
 
+	/*
 	// Checkmate black in 3 moves
 	Board::board[6][4]->move(4, 4);
 	Board::board[1][5]->move(3, 5);
@@ -57,6 +59,7 @@ int main()
 	Board::board[1][6]->move(3, 6);
 
 	Board::board[7][3]->move(3, 7);
-	
+	*/
+
 	Board::printBoard();
 }

@@ -72,6 +72,7 @@ void Board::printBoard() {
 		}
 		std::cout << std::endl;
 	}
+	std::cout << std::endl;
 }
 
 std::tuple<int, int> Board::getKingPosition(bool isWhite) {

@@ -25,10 +25,6 @@ void ChessPiece::move(int x, int y) {
 	if (!isMoveLegal(x, y)) {
 		return;
 	}
-	if (Board::isCheck(this->isWhite)) {
-		// Make logic for only allowing moves that will get the king out of check
-		return;
-	}
 
 	// Moves the piece to the new position
 	ChessPiece* temp = Board::board[x][y];
