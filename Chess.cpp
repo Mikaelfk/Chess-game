@@ -46,8 +46,6 @@ int main()
 	{
 		std::cout << legalmoves[i].first << " " << legalmoves[i].second << std::endl;
 	}
-	
-	//Board::board[1][2]->move(2, 2);
 
 	/*
 	// White checkmated in 2 moves
