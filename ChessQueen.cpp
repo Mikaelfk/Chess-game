@@ -10,6 +10,11 @@ ChessQueen::ChessQueen(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 }
 
 bool ChessQueen::isMoveLegal(int x, int y) {
+	// Out of bound check
+	if (x < 0 || x > 7 || y < 0 || y > 7) {
+		return false;
+	}
+
 	// Check if a friendly piece is on the x and y coordinates
 	if (isWhite) {
 		if (Board::board[x][y]->pieceType != 0 && Board::board[x][y]->pieceType <= 6) {
@@ -85,3 +90,15 @@ bool ChessQueen::isMoveLegal(int x, int y) {
 	return true;
 }
 
+std::vector<std::pair<int, int>> ChessQueen::getLegalMoves() {
+	// Get all legal queen moves
+	std::vector<std::pair<int, int>> legalMoves;
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			if (isMoveLegal(i, j)) {
+				legalMoves.push_back(std::make_pair(i, j));
+			}
+		}
+	}
+	return legalMoves;
+}

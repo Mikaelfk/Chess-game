@@ -53,3 +53,19 @@ bool ChessKing::isMoveLegal(int x, int y) {
 	}
 	return true;
 }
+
+std::vector<std::pair<int, int>> ChessKing::getLegalMoves() {
+	// Get all legal king moves
+	std::vector<std::pair<int, int>> legalMoves;
+	for (int i = -1; i <= 1; i++) {
+		for (int j = -1; j <= 1; j++) {
+			if (i == 0 && j == 0) {
+				continue;
+			}
+			if (isMoveLegal(this->position_x + i, this->position_y + j)) {
+				legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y + j));
+			}
+		}
+	}
+	return legalMoves;
+}

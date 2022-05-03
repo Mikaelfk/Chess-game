@@ -10,6 +10,11 @@ ChessRook::ChessRook(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 }
 
 bool ChessRook::isMoveLegal(int x, int y) {
+	// Out of bound check
+	if (x < 0 || x > 7 || y < 0 || y > 7) {
+		return false;
+	}
+
 	// Check if friendly piece is in the position
 	if (isWhite) {
 		if (Board::board[x][y]->pieceType <= 6 && Board::board[x][y]->pieceType >= 1) {
@@ -55,3 +60,16 @@ bool ChessRook::isMoveLegal(int x, int y) {
 	return true;
 }
 
+std::vector<std::pair<int, int>> ChessRook::getLegalMoves() {
+	// Get all legal rook moves
+	std::vector<std::pair<int, int>> legalMoves;
+	for (int i = 0; i < 8; i++) {
+		if (isMoveLegal(this->position_x, i)) {
+			legalMoves.push_back(std::make_pair(this->position_x, i));
+		}
+		if (isMoveLegal(i, this->position_y)) {
+			legalMoves.push_back(std::make_pair(i, this->position_y));
+		}
+	}
+	return legalMoves;
+}

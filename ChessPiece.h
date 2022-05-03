@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 class ChessPiece {
 public:
@@ -11,6 +12,9 @@ public:
 	void move(int x, int y);
 	virtual bool isMoveLegal(int x, int y) {
 		return false;
+	};
+	virtual std::vector<std::pair<int, int>> getLegalMoves() {
+		return std::vector<std::pair<int, int>>();
 	};
 };
 

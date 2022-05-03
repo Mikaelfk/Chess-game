@@ -11,6 +11,11 @@ ChessBishop::ChessBishop(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite)
 }
 
 bool ChessBishop::isMoveLegal(int x, int y) {
+	// Out of bound check
+	if (x < 0 || x > 7 || y < 0 || y > 7) {
+		return false;
+	}
+
 	// Check if the move is diagonal
 	int xDiff = x - this->position_x;
 	int yDiff = y - this->position_y;
@@ -61,4 +66,24 @@ bool ChessBishop::isMoveLegal(int x, int y) {
 	}
 
 	return true;
+}
+
+std::vector<std::pair<int, int>> ChessBishop::getLegalMoves() {
+	// Get all legal bishop moves
+	std::vector<std::pair<int, int>> legalMoves;
+	for (int i = 1; i < 8; i++) {
+		if (isMoveLegal(this->position_x + i, this->position_y + i)) {
+			legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y + i));
+		}
+		if (isMoveLegal(this->position_x + i, this->position_y - i)) {
+			legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y - i));
+		}
+		if (isMoveLegal(this->position_x - i, this->position_y + i)) {
+			legalMoves.push_back(std::make_pair(this->position_x - i, this->position_y + i));
+		}
+		if (isMoveLegal(this->position_x - i, this->position_y - i)) {
+			legalMoves.push_back(std::make_pair(this->position_x - i, this->position_y - i));
+		}
+	}
+	return legalMoves;
 }

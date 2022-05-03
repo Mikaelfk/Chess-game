@@ -39,6 +39,14 @@ int main()
 
 	Board::board[4][2]->move(3, 1);
 	Board::board[0][4]->move(1, 4);
+
+	std::vector<std::pair<int, int>> legalmoves = Board::board[3][3]->getLegalMoves();
+	// print legal moves
+	for (int i = 0; i < legalmoves.size(); i++)
+	{
+		std::cout << legalmoves[i].first << " " << legalmoves[i].second << std::endl;
+	}
+	
 	//Board::board[1][2]->move(2, 2);
 
 	/*

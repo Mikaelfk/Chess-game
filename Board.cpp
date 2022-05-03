@@ -14,13 +14,14 @@ bool Board::isCheckOnWhite = false;
 bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
 bool Board::isCheckMate = false;
+bool Board::canEnPassant = false;
 
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
 		//Create empyy arrays for each row with size of 8
 		board.at(i) = std::vector<ChessPiece*>(8);
 	}
-	
+
 	// Initialize with empty pieces
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
@@ -141,7 +142,7 @@ void Board::isCheckmate(bool isWhite) {
 	// Check if king can move to any square
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			if(Board::board[i][j]->position_x == kingPosition_x && Board::board[i][j]->position_y == kingPosition_y) {
+			if (Board::board[i][j]->position_x == kingPosition_x && Board::board[i][j]->position_y == kingPosition_y) {
 				if (!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y + 1) &&
 					!Board::board[i][j]->isMoveLegal(kingPosition_x + 1, kingPosition_y - 1) &&
 					!Board::board[i][j]->isMoveLegal(kingPosition_x - 1, kingPosition_y + 1) &&
@@ -156,5 +157,15 @@ void Board::isCheckmate(bool isWhite) {
 			}
 		}
 	}
+}
+
+void Board::isStalemate(bool isWhite) {
+	//Check if opponent can move any pieces
+
+}
+
+void Board::canEnPassantCheck() {
+	// Check if en passant is possible
+	
 }
 
