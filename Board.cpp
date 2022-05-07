@@ -15,6 +15,7 @@ bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
 bool Board::isCheckmate = false;
 bool Board::canEnPassant = false;
+bool Board::enPassantHappened = false;
 bool Board::isStalemate = false;
 
 Board::Board() {
@@ -188,10 +189,5 @@ void Board::isCheckmateFunc(bool isWhite) {
 
 	}
 	isStalemate = true;
-}
-
-void Board::canEnPassantFunc() {
-	// Check if en passant is possible
-
 }
 

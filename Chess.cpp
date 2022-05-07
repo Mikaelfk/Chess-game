@@ -56,6 +56,7 @@ int main()
 	Board::board[6][6]->move(4, 6);
 	Board::board[0][3]->move(4, 7);
 	*/
+	/*
 	// Checkmate black in 3 moves
 	Board::board[6][4]->move(4, 4);
 	Board::board[1][5]->move(3, 5);
@@ -64,6 +65,16 @@ int main()
 	Board::board[1][6]->move(3, 6);
 
 	Board::board[7][3]->move(3, 7);
+	*/
+
+	Board::board[6][4]->move(4, 4);
+	Board::board[1][3]->move(3, 3);
+
+	Board::board[4][4]->move(3, 4);
+	Board::board[1][5]->move(3, 5);
+	std::cout << Board::canEnPassant << std::endl;
+
+	Board::board[3][4]->move(2, 5);
 
 	Board::printBoard();
 }

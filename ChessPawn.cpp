@@ -10,6 +10,8 @@ ChessPawn::ChessPawn(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 }
 
 bool ChessPawn::isMoveLegal(int x, int y) {
+
+	Board::enPassantHappened = false;
 	// Out of bound check
 	if (x < 0 || x > 7 || y < 0 || y > 7) {
 		return false;
@@ -25,6 +27,9 @@ bool ChessPawn::isMoveLegal(int x, int y) {
 			return true;
 		} else if (this->position_x == x + 1 && this->position_y == y - 1 && Board::board[x][y]->pieceType >= 7) {
 			return true;
+		} else if (this->position_x == x + 1 && (this->position_y == y + 1 || this->position_y == y - 1) && Board::board[this->position_x][y]->pieceType == 7 && Board::canEnPassant) {
+			Board::enPassantHappened = true;
+			return true;
 		} else {
 			return false;
 		}
@@ -36,6 +41,9 @@ bool ChessPawn::isMoveLegal(int x, int y) {
 		} else if (this->position_x == x - 1 && this->position_y == y + 1 && Board::board[x][y]->pieceType > 0 && Board::board[x][y]->pieceType <= 6) {
 			return true;
 		} else if (this->position_x == x - 1 && this->position_y == y - 1 && Board::board[x][y]->pieceType > 0 && Board::board[x][y]->pieceType <= 6) {
+			return true;
+		} else if (this->position_x == x - 1 && (this->position_y == y + 1 || this->position_y == y - 1) && Board::board[this->position_x][y]->pieceType == 1 && Board::canEnPassant) {
+			Board::enPassantHappened = true;
 			return true;
 		} else {
 			return false;

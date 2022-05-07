@@ -24,13 +24,14 @@ void ChessPiece::move(int x, int y) {
 	if (!isMoveLegal(x, y)) {
 		return;
 	}
-
+	int x_diff = abs(x - position_x);
 	// Moves the piece to the new position
 	ChessPiece* temp = Board::board[x][y];
 
 	Board::board[x][y] = this;
 	Board::board[position_x][position_y] = new ChessPiece();
 	// Check if the move puts the friendly king in check
+	bool enPassantMove = Board::enPassantHappened;
 	if (Board::isCheck(this->isWhite)) {
 		// undo move
 		delete Board::board[this->position_x][this->position_y];
@@ -44,12 +45,28 @@ void ChessPiece::move(int x, int y) {
 	delete temp;
 	this->position_x = x;
 	this->position_y = y;
+	if (enPassantMove) {
+		if (isWhite) {
+			delete Board::board[this->position_x + 1][this->position_y];
+			Board::board[this->position_x + 1][this->position_y] = new ChessPiece();
+		} else {
+			delete Board::board[this->position_x - 1][this->position_y];
+			Board::board[this->position_x - 1][this->position_y] = new ChessPiece();
+		}
+	}
 
 	// Check if the move puts the enemy king in check
 	Board::isCheck(!this->isWhite);
 
 	// Check if the move puts the enemy king in checkmate
 	Board::isCheckmateFunc(!this->isWhite);
+
+	// Check if the move makes en passant possible
+	if ((this->pieceType == 1 && x_diff == 2) || (this->pieceType == 7 && x_diff == 2)) {
+		Board::canEnPassant = true;
+	} else {
+		Board::canEnPassant = false;
+	}
 
 	// Change who's turn it is
 	Board::whiteToMove = !Board::whiteToMove;
