@@ -15,6 +15,7 @@ bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
 bool Board::isCheckmate = false;
 bool Board::canEnPassant = false;
+bool Board::isStalemate = false;
 
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
@@ -136,7 +137,7 @@ bool Board::isCheck(bool color) {
 
 // Check if king is in checkmate, if isWhite is true, check white king, else check black king
 void Board::isCheckmateFunc(bool isWhite) {
-	// Check if king can move to any square
+	// Check if opponent has any legal moves
 	if (isWhite) {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
@@ -144,7 +145,7 @@ void Board::isCheckmateFunc(bool isWhite) {
 					return;
 				}
 			}
-		}	
+		}
 	} else {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
@@ -152,17 +153,41 @@ void Board::isCheckmateFunc(bool isWhite) {
 					return;
 				}
 			}
-		}	
+		}
 
 	}
-	std::cout << "Checkmate" << std::endl;
-	isCheckmate = true;
+	// Check if king is in check
+	if (isWhite) {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (board[i][j]->pieceType >= 7) {
+					// Check if piece can move to king
+					int kingPosition_x, kingPosition_y;
+					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(true);
+					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
+						std::cout << "Checkmate" << std::endl;
+						isCheckmate = true;
+					}
+				}
+			}
+		}
+	} else {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (board[i][j]->pieceType >= 1 && board[i][j]->pieceType <= 6) {
+					// Check if piece can move to king
+					int kingPosition_x, kingPosition_y;
+					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(false);
+					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
+						std::cout << "Checkmate" << std::endl;
+						isCheckmate = true;
+					}
+				}
+			}
+		}
 
-}
-
-void Board::isStalemate(bool isWhite) {
-	//Check if opponent can move any pieces
-
+	}
+	isStalemate = true;
 }
 
 void Board::canEnPassantFunc() {

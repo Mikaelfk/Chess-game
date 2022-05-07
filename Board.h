@@ -14,6 +14,7 @@ public:
 	static bool isCheckOnWhite;
 	static bool isCheckOnBlack;
 	static bool isCheckmate;
+	static bool isStalemate;
 	static bool whiteToMove;
 	static bool canEnPassant;
 	
@@ -22,7 +23,6 @@ public:
 	static std::tuple<int, int> getKingPosition(bool isWhite);
 	static bool isCheck(bool isWhite);
 	static void isCheckmateFunc(bool isWhite);
-	static void isStalemate(bool isWhite);
 	static void canEnPassantFunc();
 
 	// Delete copy constructor and assignment operator so that we can't copy the singleton
