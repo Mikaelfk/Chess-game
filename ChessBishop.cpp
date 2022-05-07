@@ -72,16 +72,16 @@ std::vector<std::pair<int, int>> ChessBishop::getLegalMoves() {
 	// Get all legal bishop moves
 	std::vector<std::pair<int, int>> legalMoves;
 	for (int i = 1; i < 8; i++) {
-		if (isMoveLegal(this->position_x + i, this->position_y + i)) {
+		if (canMoveBePerformed(this->position_x + i, this->position_y + i)) {
 			legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y + i));
 		}
-		if (isMoveLegal(this->position_x + i, this->position_y - i)) {
+		if (canMoveBePerformed(this->position_x + i, this->position_y - i)) {
 			legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y - i));
 		}
-		if (isMoveLegal(this->position_x - i, this->position_y + i)) {
+		if (canMoveBePerformed(this->position_x - i, this->position_y + i)) {
 			legalMoves.push_back(std::make_pair(this->position_x - i, this->position_y + i));
 		}
-		if (isMoveLegal(this->position_x - i, this->position_y - i)) {
+		if (canMoveBePerformed(this->position_x - i, this->position_y - i)) {
 			legalMoves.push_back(std::make_pair(this->position_x - i, this->position_y - i));
 		}
 	}

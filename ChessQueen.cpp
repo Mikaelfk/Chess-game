@@ -95,7 +95,7 @@ std::vector<std::pair<int, int>> ChessQueen::getLegalMoves() {
 	std::vector<std::pair<int, int>> legalMoves;
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			if (isMoveLegal(i, j)) {
+			if (canMoveBePerformed(i, j)) {
 				legalMoves.push_back(std::make_pair(i, j));
 			}
 		}

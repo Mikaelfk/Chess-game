@@ -47,28 +47,28 @@ std::vector<std::pair<int, int>> ChessPawn::getLegalMoves() {
 	// Get all legal pawn moves
 	std::vector<std::pair<int, int>> legalMoves;
 	// Check what pawn moves are legal
-	if(this->isMoveLegal(position_x + 1, position_y)) {
+	if(this->canMoveBePerformed(position_x + 1, position_y)) {
 		legalMoves.push_back(std::make_pair(position_x + 1, position_y));
 	}
-	if(this->isMoveLegal(position_x + 2, position_y)) {
+	if(this->canMoveBePerformed(position_x + 2, position_y)) {
 		legalMoves.push_back(std::make_pair(position_x + 2, position_y));
 	}
-	if(this->isMoveLegal(position_x - 1, position_y)) {
+	if(this->canMoveBePerformed(position_x - 1, position_y)) {
 		legalMoves.push_back(std::make_pair(position_x - 1, position_y));
 	}
-	if(this->isMoveLegal(position_x - 2, position_y)) {
+	if(this->canMoveBePerformed(position_x - 2, position_y)) {
 		legalMoves.push_back(std::make_pair(position_x - 2, position_y));
 	}
-	if(this->isMoveLegal(position_x + 1, position_y + 1)) {
+	if(this->canMoveBePerformed(position_x + 1, position_y + 1)) {
 		legalMoves.push_back(std::make_pair(position_x + 1, position_y + 1));
 	}
-	if(this->isMoveLegal(position_x + 1, position_y - 1)) {
+	if(this->canMoveBePerformed(position_x + 1, position_y - 1)) {
 		legalMoves.push_back(std::make_pair(position_x + 1, position_y - 1));
 	}
-	if(this->isMoveLegal(position_x - 1, position_y + 1)) {
+	if(this->canMoveBePerformed(position_x - 1, position_y + 1)) {
 		legalMoves.push_back(std::make_pair(position_x - 1, position_y + 1));
 	}
-	if(this->isMoveLegal(position_x - 1, position_y - 1)) {
+	if(this->canMoveBePerformed(position_x - 1, position_y - 1)) {
 		legalMoves.push_back(std::make_pair(position_x - 1, position_y - 1));
 	}
 	return legalMoves;

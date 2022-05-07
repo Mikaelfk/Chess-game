@@ -64,10 +64,10 @@ std::vector<std::pair<int, int>> ChessRook::getLegalMoves() {
 	// Get all legal rook moves
 	std::vector<std::pair<int, int>> legalMoves;
 	for (int i = 0; i < 8; i++) {
-		if (isMoveLegal(this->position_x, i)) {
+		if (canMoveBePerformed(this->position_x, i)) {
 			legalMoves.push_back(std::make_pair(this->position_x, i));
 		}
-		if (isMoveLegal(i, this->position_y)) {
+		if (canMoveBePerformed(i, this->position_y)) {
 			legalMoves.push_back(std::make_pair(i, this->position_y));
 		}
 	}

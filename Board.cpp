@@ -13,7 +13,7 @@ std::vector<std::vector<ChessPiece*>> Board::board(8);
 bool Board::isCheckOnWhite = false;
 bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
-bool Board::isCheckMate = false;
+bool Board::isCheckmate = false;
 bool Board::canEnPassant = false;
 
 Board::Board() {
@@ -69,6 +69,9 @@ Board& Board::getInstance() {
 void Board::printBoard() {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
+			if (board[i][j]->pieceType < 10) {
+				std::cout << " ";
+			}
 			std::cout << board[i][j]->pieceType << " ";
 		}
 		std::cout << std::endl;
@@ -107,8 +110,6 @@ bool Board::isCheck(bool color) {
 					int kingPosition_x, kingPosition_y;
 					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(true);
 					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
-						std::cout << "Check on White" << std::endl;
-						Board::isCheckmate(true);
 						return true;
 					}
 				}
@@ -124,8 +125,6 @@ bool Board::isCheck(bool color) {
 				int kingPosition_x, kingPosition_y;
 				std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(false);
 				if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
-					std::cout << "Check on Black" << std::endl;
-					Board::isCheckmate(false);
 					return true;
 				}
 			}
@@ -136,20 +135,29 @@ bool Board::isCheck(bool color) {
 }
 
 // Check if king is in checkmate, if isWhite is true, check white king, else check black king
-void Board::isCheckmate(bool isWhite) {
-	int kingPosition_x, kingPosition_y;
-	std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(isWhite);
+void Board::isCheckmateFunc(bool isWhite) {
 	// Check if king can move to any square
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			if (Board::board[i][j]->position_x == kingPosition_x && Board::board[i][j]->position_y == kingPosition_y) {
-				if (Board::board[i][j]->getLegalMoves().size() == 0) {
-					std::cout << "Checkmate" << std::endl;
-					isCheckMate = true;
+	if (isWhite) {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (Board::board[i][j]->pieceType <= 6 && Board::board[i][j]->pieceType >= 1 && Board::board[i][j]->getLegalMoves().size() != 0) {
+					return;
 				}
 			}
-		}
+		}	
+	} else {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (Board::board[i][j]->pieceType >= 7 && Board::board[i][j]->getLegalMoves().size() != 0) {
+					return;
+				}
+			}
+		}	
+
 	}
+	std::cout << "Checkmate" << std::endl;
+	isCheckmate = true;
+
 }
 
 void Board::isStalemate(bool isWhite) {
@@ -157,8 +165,8 @@ void Board::isStalemate(bool isWhite) {
 
 }
 
-void Board::canEnPassantCheck() {
+void Board::canEnPassantFunc() {
 	// Check if en passant is possible
-	
+
 }
 

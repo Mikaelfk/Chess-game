@@ -62,7 +62,7 @@ std::vector<std::pair<int, int>> ChessKing::getLegalMoves() {
 			if (i == 0 && j == 0) {
 				continue;
 			}
-			if (isMoveLegal(this->position_x + i, this->position_y + j)) {
+			if (canMoveBePerformed(this->position_x + i, this->position_y + j)) {
 				legalMoves.push_back(std::make_pair(this->position_x + i, this->position_y + j));
 			}
 		}
