@@ -25,27 +25,17 @@ void ChessPiece::move(int x, int y) {
 		return;
 	}
 	int x_diff = abs(x - position_x);
-	// Moves the piece to the new position
-	ChessPiece* temp = Board::board[x][y];
 
+	// Moves the piece to the new position
 	Board::board[x][y] = this;
 	Board::board[position_x][position_y] = new ChessPiece();
-	// Check if the move puts the friendly king in check
+
 	bool enPassantMove = Board::enPassantHappened;
 	bool whiteCastledKingSide = Board::whiteCastledKingSide;
 	bool whiteCastledQueenSide = Board::whiteCastledQueenSide;
 	bool blackCastledKingSide = Board::blackCastledKingSide;
 	bool blackCastledQueenSide = Board::blackCastledQueenSide;
 	
-	if (Board::isCheck(this->isWhite)) {
-		// undo move
-		delete Board::board[this->position_x][this->position_y];
-		Board::board[this->position_x][this->position_y] = this;
-		Board::board[x][y] = temp;
-		std::cout << "Move is not legal" << std::endl;
-		return;
-	}
-
 	// Check if the move makes castling impossible;
 	if (this->pieceType == 6) {
 		Board::canWhiteCastleKingSide = false;
@@ -63,8 +53,7 @@ void ChessPiece::move(int x, int y) {
 		Board::canBlackCastleKingSide = false;
 	}
 
-	// Change the position of the piece and delete the old one
-	delete temp;
+	// Change the position of the piece
 	this->position_x = x;
 	this->position_y = y;
 	if (enPassantMove) {

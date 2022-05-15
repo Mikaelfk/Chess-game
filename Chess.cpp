@@ -1,11 +1,6 @@
 #include <iostream>
 #include <vector>
 #include "Board.h"
-#include "ChessPawn.h"
-#include "ChessKnight.h"
-#include "ChessBishop.h"
-#include "ChessRook.h"
-#include "ChessQueen.h"
 
 /*
 Each piece type is represented with a number:
