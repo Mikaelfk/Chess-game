@@ -18,7 +18,18 @@ public:
 	static bool whiteToMove;
 	static bool canEnPassant;
 	static bool enPassantHappened;
-	
+	static bool canWhiteCastleKingSide;
+	static bool canWhiteCastleQueenSide;
+	static bool canBlackCastleKingSide;
+	static bool canBlackCastleQueenSide;
+
+	static bool	whiteCastledKingSide;
+	static bool whiteCastledQueenSide;
+	static bool blackCastledKingSide;
+	static bool blackCastledQueenSide;
+
+
+
 	static Board& getInstance();
 	static void printBoard();
 	static std::tuple<int, int> getKingPosition(bool isWhite);

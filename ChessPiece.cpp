@@ -21,7 +21,7 @@ void ChessPiece::move(int x, int y) {
 	if (Board::whiteToMove != isWhite || Board::isCheckmate) {
 		return;
 	}
-	if (!isMoveLegal(x, y)) {
+	if (!canMoveBePerformed(x, y)) {
 		return;
 	}
 	int x_diff = abs(x - position_x);
@@ -32,6 +32,11 @@ void ChessPiece::move(int x, int y) {
 	Board::board[position_x][position_y] = new ChessPiece();
 	// Check if the move puts the friendly king in check
 	bool enPassantMove = Board::enPassantHappened;
+	bool whiteCastledKingSide = Board::whiteCastledKingSide;
+	bool whiteCastledQueenSide = Board::whiteCastledQueenSide;
+	bool blackCastledKingSide = Board::blackCastledKingSide;
+	bool blackCastledQueenSide = Board::blackCastledQueenSide;
+	
 	if (Board::isCheck(this->isWhite)) {
 		// undo move
 		delete Board::board[this->position_x][this->position_y];
@@ -39,6 +44,23 @@ void ChessPiece::move(int x, int y) {
 		Board::board[x][y] = temp;
 		std::cout << "Move is not legal" << std::endl;
 		return;
+	}
+
+	// Check if the move makes castling impossible;
+	if (this->pieceType == 6) {
+		Board::canWhiteCastleKingSide = false;
+		Board::canWhiteCastleQueenSide = false;
+	} else if (this->pieceType == 12) {
+		Board::canBlackCastleKingSide = false;
+		Board::canBlackCastleQueenSide = false;
+	} else if (this->pieceType == 4 && this->position_x == 7 && this->position_y == 7) {
+		Board::canWhiteCastleKingSide = false;
+	} else if (this->pieceType == 4 && this->position_x == 7 && this->position_y == 0) {
+		Board::canWhiteCastleQueenSide = false;
+	} else if (this->pieceType == 10 && this->position_x == 0 && this->position_y == 0) {
+		Board::canBlackCastleQueenSide = false;
+	} else if (this->pieceType == 10 && this->position_x == 0 && this->position_y == 7) {
+		Board::canBlackCastleKingSide = false;
 	}
 
 	// Change the position of the piece and delete the old one
@@ -55,11 +77,36 @@ void ChessPiece::move(int x, int y) {
 		}
 	}
 
-	// Check if the move puts the enemy king in check
-	Board::isCheck(!this->isWhite);
+	// Check if the move was castling
+	if (whiteCastledKingSide) {
+		// Move rook to position 7,5
+		delete Board::board[7][5];
+		Board::board[7][5] = Board::board[7][7];
+		Board::board[7][7] = new ChessPiece();
+		
+	} else if (whiteCastledQueenSide) {
+		// Move rook to position 7,3
+		delete Board::board[7][3];
+		Board::board[7][3] = Board::board[7][0];
+		Board::board[7][0] = new ChessPiece();
+	} else if (blackCastledKingSide) {
+		// Move rook to position 0,5
+		delete Board::board[0][5];
+		Board::board[0][5] = Board::board[0][7];
+		Board::board[0][7] = new ChessPiece();
+	} else if (blackCastledQueenSide) {
+		// Move rook to position 0,3
+		delete Board::board[0][3];
+		Board::board[0][3] = Board::board[0][0];
+		Board::board[0][0] = new ChessPiece();
+	}
 
-	// Check if the move puts the enemy king in checkmate
-	Board::isCheckmateFunc(!this->isWhite);
+
+	// Check if the move puts the enemy king in check
+	if (Board::isCheck(!this->isWhite)) {
+		// Check if the move puts the enemy king in checkmate
+		Board::isCheckmateFunc(!this->isWhite);
+	}
 
 	// Check if the move makes en passant possible
 	if ((this->pieceType == 1 && x_diff == 2) || (this->pieceType == 7 && x_diff == 2)) {
@@ -100,7 +147,7 @@ bool ChessPiece::canMoveBePerformed(int x, int y) {
 	if (ChessPiece::willMovePutFriendlyKingInCheck(x, y)) {
 		return false;
 	}
-	if(!this->isMoveLegal(x, y)) {
+	if (!this->isMoveLegal(x, y)) {
 		return false;
 	}
 	return true;

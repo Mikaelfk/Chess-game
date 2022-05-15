@@ -17,6 +17,15 @@ bool Board::isCheckmate = false;
 bool Board::canEnPassant = false;
 bool Board::enPassantHappened = false;
 bool Board::isStalemate = false;
+bool Board::canWhiteCastleKingSide = true;
+bool Board::canWhiteCastleQueenSide = true;
+bool Board::canBlackCastleKingSide = true;
+bool Board::canBlackCastleQueenSide = true;
+
+bool Board::whiteCastledKingSide = false;
+bool Board::whiteCastledQueenSide = false;
+bool Board::blackCastledKingSide = false;
+bool Board::blackCastledQueenSide = false;
 
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
