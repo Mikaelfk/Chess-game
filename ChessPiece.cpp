@@ -1,5 +1,9 @@
 #include "ChessPiece.h"
 #include "Board.h"
+#include "ChessQueen.h"
+#include "ChessRook.h"
+#include "ChessBishop.h"
+#include "ChessKnight.h"
 
 
 ChessPiece::ChessPiece() {
@@ -17,7 +21,7 @@ ChessPiece::ChessPiece(int x, int y, bool isWhite) {
 	this->pieceType = 0;
 }
 
-void ChessPiece::move(int x, int y) {
+void ChessPiece::move(int x, int y, int promote) {
 	if (Board::whiteToMove != isWhite || Board::isCheckmate) {
 		return;
 	}
@@ -90,7 +94,20 @@ void ChessPiece::move(int x, int y) {
 		Board::board[0][0] = new ChessPiece();
 	}
 
-
+	// Check if move is promotion
+	bool selfDestruct = false;
+	if ((this->pieceType == 1 && this->position_x == 0) || (this->pieceType == 7 && this->position_x == 7)) {
+		if (promote == 1) {
+			Board::board[this->position_x][this->position_y] = new ChessRook(this->position_x, this->position_y, this->isWhite);
+		} else if (promote == 2) {
+			Board::board[this->position_x][this->position_y] = new ChessBishop(this->position_x, this->position_y, this->isWhite);
+		} else if (promote == 3) {
+			Board::board[this->position_x][this->position_y] = new ChessKnight(this->position_x, this->position_y, this->isWhite);
+		} else {
+			Board::board[this->position_x][this->position_y] = new ChessQueen(this->position_x, this->position_y, this->isWhite);
+		}
+		selfDestruct = true;
+	} 
 	// Check if the move puts the enemy king in check
 	if (Board::isCheck(!this->isWhite)) {
 		// Check if the move puts the enemy king in checkmate
@@ -106,6 +123,11 @@ void ChessPiece::move(int x, int y) {
 
 	// Change who's turn it is
 	Board::whiteToMove = !Board::whiteToMove;
+
+	// Commit suicide
+	if (selfDestruct) {
+		delete this;
+	}
 }
 
 bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
@@ -116,12 +138,21 @@ bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
 
 	// Moves the piece to the new position
 	Board::board[x][y] = this;
+	Board::board[this->position_x][this->position_y] = new ChessPiece();
+	int temp_x = this->position_x;
+	int temp_y = this->position_y;
+	this->position_x = x;
+	this->position_y = y;
 
 	// Check if the move puts the friendly king in check
 	if (Board::isCheck(this->isWhite)) {
 		check = true;
 	}
+
 	// Undo move
+	this->position_x = temp_x;
+	this->position_y = temp_y;
+	delete Board::board[this->position_x][this->position_y];
 	Board::board[this->position_x][this->position_y] = this;
 	Board::board[x][y] = temp;
 

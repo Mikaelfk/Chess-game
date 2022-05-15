@@ -62,7 +62,6 @@ int main()
 	Board::board[7][3]->move(3, 7);
 	*/
 
-	/*
 	// En passant test
 	Board::board[6][4]->move(4, 4);
 	Board::board[1][3]->move(3, 3);
@@ -71,8 +70,14 @@ int main()
 	Board::board[1][5]->move(3, 5);
 
 	Board::board[3][4]->move(2, 5);
-	*/
+	Board::board[1][4]->move(2, 4);
 
+	Board::board[2][5]->move(1, 5);
+	Board::board[0][4]->move(1, 3);
+
+	Board::board[1][5]->move(0, 6);
+
+	/*
 	// Castling test
 	Board::board[6][4]->move(4, 4);
 	Board::board[1][4]->move(3, 4);
@@ -85,5 +90,7 @@ int main()
 
 	Board::board[7][4]->move(7, 6);
 	Board::board[0][4]->move(0, 6);
+	*/
+
 	Board::printBoard();
 }

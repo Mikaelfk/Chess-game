@@ -11,7 +11,7 @@ public:
 	int pieceType;
 	bool isWhite;
 
-	void move(int x, int y);
+	void move(int x, int y, int promote = 0);
 	bool willMovePutFriendlyKingInCheck(int x, int y);
 	bool canMoveBePerformed(int x, int y);
 	virtual bool isMoveLegal(int x, int y) {
