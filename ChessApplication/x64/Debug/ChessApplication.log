@@ -1,1 +1,0 @@
-﻿C:\Users\Ukhur\Documents\Projects\ChessApplication\ChessApplication.vcxproj(54,5): error MSB4019: The imported project "C:\Users\Ukhur\Documents\Projects\ChessApplication\QtMsBuild\Qt.props" was not found. Confirm that the expression in the Import declaration "C:\Users\Ukhur\Documents\Projects\ChessApplication\QtMsBuild\Qt.props" is correct, and that the file exists on disk.
