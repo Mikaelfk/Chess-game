@@ -1,5 +1,5 @@
 #include "ChessRook.h"
-#include "Board.h"
+#include "../Board.h"
 
 ChessRook::ChessRook(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {

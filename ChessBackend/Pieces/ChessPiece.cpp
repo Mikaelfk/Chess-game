@@ -1,9 +1,9 @@
 #include "ChessPiece.h"
-#include "Board.h"
 #include "ChessQueen.h"
 #include "ChessRook.h"
 #include "ChessBishop.h"
 #include "ChessKnight.h"
+#include "../Board.h"
 
 
 ChessPiece::ChessPiece() {

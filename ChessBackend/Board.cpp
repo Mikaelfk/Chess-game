@@ -1,12 +1,12 @@
 #include <iostream>
 #include <tuple>
 #include "Board.h"
-#include "ChessPawn.h"
-#include "ChessKnight.h"
-#include "ChessBishop.h"
-#include "ChessRook.h"
-#include "ChessQueen.h"
-#include "ChessKing.h"	
+#include "Pieces/ChessPawn.h"
+#include "Pieces/ChessKnight.h"
+#include "Pieces/ChessBishop.h"
+#include "Pieces/ChessRook.h"
+#include "Pieces/ChessQueen.h"
+#include "Pieces/ChessKing.h"	
 
 
 std::vector<std::vector<ChessPiece*>> Board::board(8);

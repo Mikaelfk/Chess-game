@@ -1,6 +1,6 @@
 #include <cmath>
 #include "ChessKing.h"
-#include "Board.h"
+#include "../Board.h"
 
 ChessKing::ChessKing(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {

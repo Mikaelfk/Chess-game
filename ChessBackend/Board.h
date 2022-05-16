@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
-#include "ChessPiece.h"
+#include "Pieces/ChessPiece.h"
 
 typedef std::vector<std::vector<ChessPiece*>> ChessPieceMatrix;
 

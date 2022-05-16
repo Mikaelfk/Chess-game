@@ -1,6 +1,6 @@
 #include <cmath> 
 #include "ChessBishop.h"
-#include "Board.h"
+#include "../Board.h"
 
 ChessBishop::ChessBishop(int x, int y, bool isWhite) : ChessPiece(x, y, isWhite) {
 	if (isWhite) {

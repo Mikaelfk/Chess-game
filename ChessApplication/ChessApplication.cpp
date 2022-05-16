@@ -1,13 +1,16 @@
 #include <QLabel>
 #include <QHBoxLayout>
 #include "ChessApplication.h"
+#include "../ChessBackend/Board.h"
 
 ChessApplication::ChessApplication(QWidget *parent)
     : QMainWindow(parent)
 {
+    Board::getInstance();
+	
     // Create a label
     QLabel* label = new QLabel(this);
-    QPixmap pixmap(":/ChessApplication/Images/ChessBoard.png");
+    QPixmap pixmap(":/Images/ChessBoard.png");
     label->setPixmap(pixmap);
     label->setScaledContents(true);
     label->setFixedWidth(600);
