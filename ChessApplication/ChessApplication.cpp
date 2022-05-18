@@ -1,7 +1,7 @@
 #include <QLabel>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QScrollArea>
+#include <QPushButton>
+#include <QDebug>
+#include <algorithm>
 #include "ChessApplication.h"
 #include "../ChessBackend/Board.h"
 
@@ -11,36 +11,41 @@ ChessApplication::ChessApplication(QWidget *parent)
     // Initiate the board
     Board::getInstance();
 
+    ui.setupUi(this);
 
 
-    // Create a grid
-	QVBoxLayout* gridVertical = new QVBoxLayout;
+    ui.pushButton->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+}
 
-	QLabel* whiteKing = new QLabel;
-    QPixmap whiteKingMap(":/Images/White King.png");
-    whiteKing->setPixmap(whiteKingMap);
+void ChessApplication::updateBoard() {
+	
+}
 
-    gridVertical->addWidget(whiteKing);
+void ChessApplication::on_pushButton_clicked() {
 
+    // Get position of mouse and convert to board position
+    QPoint _Position = ui.pushButton->mapFromGlobal(QCursor::pos());
+    int row = _Position.y() / 75;
+    int column = _Position.x() / 75;
+    qDebug() << row << " " << column;
 
+    // Get the legal moves for given piece
+    qDebug() << legalMoves.size();
+    std::pair<int, int> move = std::make_pair(row, column);
 
-	// Create background label which contains the board
-    QLabel* label = new QLabel(this);
-    QPixmap pixmap(":/Images/ChessBoard.png");
-    label->setPixmap(pixmap);
-    label->setScaledContents(true);
-    label->setFixedWidth(600);
-    label->setFixedHeight(600);
-    label->setAlignment(Qt::AlignCenter);
+    if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
+        qDebug() << "Piece chosen";
+        Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column);
+    }
+	
+    legalMoves = Board::board[row][column]->getLegalMoves();
 
-    // Create horizontal layout
-    QHBoxLayout *layout = new QHBoxLayout();
-    layout->addLayout(gridVertical);
-    layout->addWidget(label);
+    if (legalMoves.size() > 0){
+        pieceChosen = true;
+        activePiecePosition = std::make_pair(row, column);
+    } else {
+        pieceChosen = false;
+    }
 
-    // Create widget
-    QWidget* mainWidget = new QWidget;
-    mainWidget->setLayout(layout);
-
-    setCentralWidget(mainWidget);
+    Board::printBoard();
 }

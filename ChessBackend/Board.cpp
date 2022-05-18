@@ -9,7 +9,7 @@
 #include "Pieces/ChessKing.h"	
 
 
-std::vector<std::vector<ChessPiece*>> Board::board(8);
+ChessPieceMatrix Board::board(8);
 bool Board::isCheckOnWhite = false;
 bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
