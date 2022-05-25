@@ -26,14 +26,7 @@ bool ChessQueen::isMoveLegal(int x, int y) {
 		}
 	}
 
-	// Check that the move is a valid queen move
-	if (abs(x - this->position_x) == abs(y - this->position_y)) {
-		return true;
-	} else {
-		return false;
-	}
-	
-	// Check if a piece is in the way
+	// Check if a piece is in the way of the queen
 	if (x == this->position_x) {
 		if (y > this->position_y) {
 			for (int i = this->position_y + 1; i < y; i++) {
@@ -62,31 +55,42 @@ bool ChessQueen::isMoveLegal(int x, int y) {
 				}
 			}
 		}
-	} else if (x > this->position_x && y > this->position_y) {
-		for (int i = this->position_x + 1, j = this->position_y + 1; i < x && j < y; i++, j++) {
-			if (Board::board[i][j]->pieceType != 0) {
-				return false;
+	} else if (abs(x - this->position_x) == abs(y - this->position_y)) {
+		if (x > this->position_x) {
+			if (y > this->position_y) {
+				for (int i = 1; i < abs(x - this->position_x); i++) {
+					if (Board::board[this->position_x + i][this->position_y + i]->pieceType != 0) {
+						return false;
+					}
+				}
+			} else {
+				for (int i = 1; i < abs(x - this->position_x); i++) {
+					if (Board::board[this->position_x + i][this->position_y - i]->pieceType != 0) {
+						return false;
+					}
+				}
+			}
+		} else {
+			if (y > this->position_y) {
+				for (int i = 1; i < abs(x - this->position_x); i++) {
+					if (Board::board[this->position_x - i][this->position_y + i]->pieceType != 0) {
+						return false;
+					}
+				}
+			} else {
+				for (int i = 1; i < abs(x - this->position_x); i++) {
+					if (Board::board[this->position_x - i][this->position_y - i]->pieceType != 0) {
+						return false;
+					}
+				}
 			}
 		}
-	} else if (x > this->position_x && y < this->position_y) {
-		for (int i = this->position_x + 1, j = this->position_y - 1; i < x && j > y; i++, j--) {
-			if (Board::board[i][j]->pieceType != 0) {
-				return false;
-			}
-		}
-	} else if (x < this->position_x && y > this->position_y) {
-		for (int i = this->position_x - 1, j = this->position_y + 1; i > x && j < y; i--, j++) {
-			if (Board::board[i][j]->pieceType != 0) {
-				return false;
-			}
-		}
-	} else if (x < this->position_x && y < this->position_y) {
-		for (int i = this->position_x - 1, j = this->position_y - 1; i > x && j > y; i--, j--) {
-			if (Board::board[i][j]->pieceType != 0) {
-				return false;
-			}
-		}
+	} else {
+		return false;
 	}
+
+
+
 	return true;
 }
 

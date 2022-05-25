@@ -131,8 +131,6 @@ void ChessPiece::move(int x, int y, int promote) {
 }
 
 bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
-	bool check = false;
-
 	// Saves the piece that is currently in the new position
 	ChessPiece* temp = Board::board[x][y];
 
@@ -145,9 +143,7 @@ bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
 	this->position_y = y;
 
 	// Check if the move puts the friendly king in check
-	if (Board::isCheck(this->isWhite)) {
-		check = true;
-	}
+	bool check = Board::isCheck(this->isWhite);
 
 	// Undo move
 	this->position_x = temp_x;
@@ -170,5 +166,6 @@ bool ChessPiece::canMoveBePerformed(int x, int y) {
 	if (!this->isMoveLegal(x, y)) {
 		return false;
 	}
+
 	return true;
 }
