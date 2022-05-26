@@ -50,7 +50,7 @@ bool ChessKing::isMoveLegal(int x, int y) {
             }
             Board::whiteCastledKingSide = true;
             return true;
-        } else if (Board::canWhiteCastleQueenSide && x == 7 && y == 2 && Board::board[7][2]->pieceType == 0 && Board::board[7][3]->pieceType == 0 && Board::board[7][4]->pieceType == 0) {
+        } else if (Board::canWhiteCastleQueenSide && x == 7 && y == 2 && Board::board[7][1]->pieceType == 0 && Board::board[7][2]->pieceType == 0 && Board::board[7][3]->pieceType == 0) {
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -79,7 +79,7 @@ bool ChessKing::isMoveLegal(int x, int y) {
             }
             Board::blackCastledKingSide = true;
             return true;
-        } else if (Board::canBlackCastleQueenSide && x == 0 && y == 2 && Board::board[0][2]->pieceType == 0 && Board::board[0][3]->pieceType == 0 && Board::board[0][4]->pieceType == 0) {
+        } else if (Board::canBlackCastleQueenSide && x == 0 && y == 2 && Board::board[0][1]->pieceType == 0 && Board::board[0][2]->pieceType == 0 && Board::board[0][3]->pieceType == 0) {
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
