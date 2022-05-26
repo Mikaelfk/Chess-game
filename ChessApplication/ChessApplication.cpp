@@ -14,7 +14,6 @@ ChessApplication::ChessApplication(QWidget *parent)
     ui.setupUi(this);
 
 
-    ui.pushButton->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }
 
 void ChessApplication::updateBoard() {
@@ -51,6 +50,6 @@ void ChessApplication::on_pushButton_clicked() {
     }
 
     // clear the console
-    system("CLS");
+    system("clear");
     Board::printBoard();
 }
