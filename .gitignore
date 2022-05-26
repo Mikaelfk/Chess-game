@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# build outputs
+CMakeFiles
+Chess_autogen
+.qt
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+Chess
