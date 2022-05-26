@@ -1,4 +1,4 @@
-﻿{
+{
     "version": 3,
     "configurePresets": [
         {
@@ -25,19 +25,19 @@
                 "value": "x64",
                 "strategy": "external"
             },
-          "cacheVariables": {
-            "CMAKE_BUILD_TYPE": "Debug",
-            "CMAKE_PREFIX_PATH": "C:/Qt/6.3.0/msvc2019_64"
-          }
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.3.0/msvc2019_64"
+            }
         },
         {
             "name": "x64-release",
             "displayName": "x64 Release",
             "inherits": "x64-debug",
-          "cacheVariables": {
-            "CMAKE_BUILD_TYPE": "Release",
-            "CMAKE_PREFIX_PATH": "C:/Qt/6.3.0/msvc2019_64"
-          }
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.3.0/msvc2019_64"
+            }
         },
         {
             "name": "x86-debug",
@@ -57,6 +57,17 @@
             "inherits": "x86-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "linux-build",
+            "displayName": "Linux Build",
+            "description": "Sets Ninja generator, build and install directory",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
             }
         }
     ]
