@@ -43,6 +43,9 @@ target_link_libraries(move_test PRIVATE backend)
 add_executable(check_test "Tests/check_test.cpp")
 target_link_libraries(check_test PRIVATE backend)
 
+add_executable(checkmate_test "Tests/checkmate_test.cpp")
+target_link_libraries(checkmate_test PRIVATE backend)
+
 # defining the tests
 enable_testing()
 add_test(NAME Board_Test
@@ -53,5 +56,8 @@ add_test(NAME Move_Test
 )
 add_test(NAME Check_Test
         COMMAND $<TARGET_FILE:check_test>
+)
+add_test(NAME Checkmate_Test
+        COMMAND $<TARGET_FILE:checkmate_test>
 )
 

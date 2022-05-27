@@ -175,7 +175,6 @@ void Board::isCheckmateFunc(bool isWhite) {
 					int kingPosition_x, kingPosition_y;
 					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(true);
 					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
-						std::cout << "Checkmate" << std::endl;
 						isCheckmate = true;
 					}
 				}
@@ -189,7 +188,6 @@ void Board::isCheckmateFunc(bool isWhite) {
 					int kingPosition_x, kingPosition_y;
 					std::tie(kingPosition_x, kingPosition_y) = Board::getKingPosition(false);
 					if (board[i][j]->isMoveLegal(kingPosition_x, kingPosition_y)) {
-						std::cout << "Checkmate" << std::endl;
 						isCheckmate = true;
 					}
 				}
