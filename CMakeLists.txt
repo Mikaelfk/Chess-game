@@ -40,12 +40,18 @@ target_link_libraries(board_test PRIVATE backend)
 add_executable(move_test "Tests/move_test.cpp")
 target_link_libraries(move_test PRIVATE backend)
 
+add_executable(check_test "Tests/check_test.cpp")
+target_link_libraries(check_test PRIVATE backend)
+
 # defining the tests
 enable_testing()
-add_test(NAME board_test
+add_test(NAME Board_Test
         COMMAND $<TARGET_FILE:board_test>
 )
-add_test(NAME move_test
+add_test(NAME Move_Test
         COMMAND $<TARGET_FILE:move_test>
+)
+add_test(NAME Check_Test
+        COMMAND $<TARGET_FILE:check_test>
 )
 
