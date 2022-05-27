@@ -11,14 +11,11 @@ ChessApplication::ChessApplication(QWidget* parent)
 	// Initiate the board
 	Board::getInstance();
 
-	//or set the layout and the view in the designer if using Qt Creator
-
-	//EDIT: add background like this first
 	QGraphicsPixmapItem* background = new QGraphicsPixmapItem(QPixmap(":/Images/ChessBoard.png"));
 	scene.addItem(background);
-	background->setPos(0, 0); //position it to cover all the scene so at 0,0 which is the origin point
-	background->setScale(0.5); //scale the image to the scene rectangle to fill it
-	background->setZValue(-0.1); //to ensure it is always at the back
+	background->setPos(0, 0); 
+	background->setScale(0.5); 
+	background->setZValue(-0.1); 
 
 	// Add transparent QPushButton on top of the board
 	pushButton = new QPushButton();
@@ -129,10 +126,29 @@ void ChessApplication::on_pushButton_clicked() {
 		legalMoves = Board::board[row][column]->getLegalMoves();
 	}
 
+
+	// Empty moveHints vector
+	for (auto hint : moveHints) {
+		scene.removeItem(hint);
+		delete hint;
+	}
+	moveHints.clear();
+
 	// Check if the clicked square has any legal moves
 	if (legalMoves.size() > 0) {
 		pieceChosen = true;
 		activePiecePosition = std::make_pair(row, column);
+		// For each legal move, draw a semi transparent grey circle on the board
+		if ((Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType >= 7 && (!Board::whiteToMove))
+			|| (Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType <= 6 && Board::whiteToMove)) {
+			for (auto move : legalMoves) {
+				moveHints.push_back(new QGraphicsEllipseItem(move.second * 62.5 + 21, move.first * 62.5 + 21, 20, 20));
+				moveHints.back()->setBrush(Qt::gray);
+				moveHints.back()->setOpacity(0.3);
+				moveHints.back()->setZValue(1);
+				scene.addItem(moveHints.back());
+			}
+		}
 	} else {
 		pieceChosen = false;
 	}

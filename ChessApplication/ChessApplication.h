@@ -36,4 +36,7 @@ private:
 		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }
 	};
 
+	// vector of move hints
+	std::vector<QGraphicsEllipseItem*> moveHints = {};
+
 };
