@@ -30,7 +30,3 @@ set_target_properties(Chess PROPERTIES
     MACOSX_BUNDLE ON
 )
 
-set_target_properties(Chess PROPERTIES
-LINK_FLAGS /SUBSYSTEM:CONSOLE
-)
-

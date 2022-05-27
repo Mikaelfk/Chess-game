@@ -105,9 +105,6 @@ void ChessApplication::updateBoard() {
 			}
 		}
 	}
-
-
-
 }
 
 void ChessApplication::on_pushButton_clicked() {
