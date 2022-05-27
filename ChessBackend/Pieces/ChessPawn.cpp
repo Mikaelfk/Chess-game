@@ -22,7 +22,9 @@ bool ChessPawn::isMoveLegal(int x, int y) {
 		if (this->position_x == x + 1 && this->position_y == y && Board::board[x][y]->pieceType == 0) {
 			return true;
 		} else if (this->position_x == x + 2 && this->position_y == y && this->position_x == 6 && Board::board[x][y]->pieceType == 0) {
-			return true;
+			if(Board::board[this->position_x - 1][this->position_y]->pieceType == 0) {
+				return true;
+			}
 		} else if (this->position_x == x + 1 && this->position_y == y + 1 && Board::board[x][y]->pieceType >= 7) {
 			return true;
 		} else if (this->position_x == x + 1 && this->position_y == y - 1 && Board::board[x][y]->pieceType >= 7) {
@@ -37,7 +39,9 @@ bool ChessPawn::isMoveLegal(int x, int y) {
 		if (this->position_x == x - 1 && this->position_y == y && Board::board[x][y]->pieceType == 0) {
 			return true;
 		} else if (this->position_x == x - 2 && this->position_y == y && this->position_x == 1 && Board::board[x][y]->pieceType == 0) {
-			return true;
+			if(Board::board[this->position_x + 1][this->position_y]->pieceType == 0) {
+				return true;
+			}
 		} else if (this->position_x == x - 1 && this->position_y == y + 1 && Board::board[x][y]->pieceType > 0 && Board::board[x][y]->pieceType <= 6) {
 			return true;
 		} else if (this->position_x == x - 1 && this->position_y == y - 1 && Board::board[x][y]->pieceType > 0 && Board::board[x][y]->pieceType <= 6) {

@@ -136,6 +136,7 @@ void ChessApplication::on_pushButton_clicked() {
 
 	// Check if the clicked square has any legal moves
 	if (legalMoves.size() > 0) {
+
 		pieceChosen = true;
 		activePiecePosition = std::make_pair(row, column);
 		// For each legal move, draw a semi transparent grey circle on the board
