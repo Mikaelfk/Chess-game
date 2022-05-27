@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QPushButton>
 #include "ui_ChessApplication.h"
 
 class ChessApplication : public QMainWindow
@@ -19,5 +22,20 @@ public slots:
 
 private:
     Ui::ChessApplicationClass ui;
+    QGraphicsScene scene;
+    QGraphicsView view;
+	QPushButton* pushButton;
+
+	// 2d vector for QGraphicsPixmapItem pointers
+	std::vector<std::vector<QGraphicsPixmapItem*>> board = {
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },
+		{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }
+	};
 
 };
