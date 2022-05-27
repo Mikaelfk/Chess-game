@@ -4,7 +4,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPushButton>
-#include "ui_ChessApplication.h"
 
 class ChessApplication : public QMainWindow
 {
@@ -21,7 +20,6 @@ public slots:
     void on_pushButton_clicked();
 
 private:
-    Ui::ChessApplicationClass ui;
     QGraphicsScene scene;
     QGraphicsView view;
 	QPushButton* pushButton;
