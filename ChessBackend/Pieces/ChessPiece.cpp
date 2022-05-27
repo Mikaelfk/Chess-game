@@ -39,7 +39,7 @@ void ChessPiece::move(int x, int y, int promote) {
 	bool whiteCastledQueenSide = Board::whiteCastledQueenSide;
 	bool blackCastledKingSide = Board::blackCastledKingSide;
 	bool blackCastledQueenSide = Board::blackCastledQueenSide;
-	
+
 	// Check if the move makes castling impossible;
 	if (this->pieceType == 6) {
 		Board::canWhiteCastleKingSide = false;
@@ -75,22 +75,30 @@ void ChessPiece::move(int x, int y, int promote) {
 		// Move rook to position 7,5
 		delete Board::board[7][5];
 		Board::board[7][5] = Board::board[7][7];
+		Board::board[7][5]->position_x = 7;
+		Board::board[7][5]->position_y = 5;
 		Board::board[7][7] = new ChessPiece();
-		
+
 	} else if (whiteCastledQueenSide) {
 		// Move rook to position 7,3
 		delete Board::board[7][3];
 		Board::board[7][3] = Board::board[7][0];
+		Board::board[7][3]->position_x = 7;
+		Board::board[7][3]->position_y = 3;
 		Board::board[7][0] = new ChessPiece();
 	} else if (blackCastledKingSide) {
 		// Move rook to position 0,5
 		delete Board::board[0][5];
 		Board::board[0][5] = Board::board[0][7];
+		Board::board[0][5]->position_x = 0;
+		Board::board[0][5]->position_y = 5;
 		Board::board[0][7] = new ChessPiece();
 	} else if (blackCastledQueenSide) {
 		// Move rook to position 0,3
 		delete Board::board[0][3];
 		Board::board[0][3] = Board::board[0][0];
+		Board::board[0][3]->position_x = 0;
+		Board::board[0][3]->position_y = 3;
 		Board::board[0][0] = new ChessPiece();
 	}
 
@@ -107,7 +115,7 @@ void ChessPiece::move(int x, int y, int promote) {
 			Board::board[this->position_x][this->position_y] = new ChessQueen(this->position_x, this->position_y, this->isWhite);
 		}
 		selfDestruct = true;
-	} 
+	}
 	// Check if the move puts the enemy king in check
 	if (Board::isCheck(!this->isWhite)) {
 		// Check if the move puts the enemy king in checkmate

@@ -26,7 +26,7 @@ ChessApplication::ChessApplication(QWidget* parent)
 	pushButton->setStyleSheet("background-color: transparent");
 	// Set size of the push button
 	pushButton->setFixedSize(QSize(500, 500));
-	QGraphicsProxyWidget *proxy = scene.addWidget(pushButton);
+	QGraphicsProxyWidget* proxy = scene.addWidget(pushButton);
 
 	connect(pushButton, &QPushButton::released, this, &ChessApplication::on_pushButton_clicked);
 
@@ -140,6 +140,5 @@ void ChessApplication::on_pushButton_clicked() {
 		pieceChosen = false;
 	}
 
-
 	updateBoard();
-	}
+}
