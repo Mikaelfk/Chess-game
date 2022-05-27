@@ -1,5 +1,5 @@
 # Chess-game
 
-![Cmake workflow](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml/badge.svg)
+[![CMake](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml/badge.svg)](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml)
 
 This is bad :)
