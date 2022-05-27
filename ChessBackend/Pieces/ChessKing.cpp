@@ -37,6 +37,9 @@ bool ChessKing::isMoveLegal(int x, int y) {
     // Check if the move is castling
     if (isWhite) {
         if (Board::canWhiteCastleKingSide && x == 7 && y == 6 && Board::board[7][6]->pieceType == 0 && Board::board[7][5]->pieceType == 0) {
+            if (Board::isCheckOnWhite) {
+                return false;
+            }
             // Check if opponent has line of sight to the 7,6 or 7,5 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -51,6 +54,9 @@ bool ChessKing::isMoveLegal(int x, int y) {
             Board::whiteCastledKingSide = true;
             return true;
         } else if (Board::canWhiteCastleQueenSide && x == 7 && y == 2 && Board::board[7][1]->pieceType == 0 && Board::board[7][2]->pieceType == 0 && Board::board[7][3]->pieceType == 0) {
+            if (Board::isCheckOnWhite) {
+                return false;
+            }
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -66,6 +72,9 @@ bool ChessKing::isMoveLegal(int x, int y) {
         }
     } else {
         if (Board::canBlackCastleKingSide && x == 0 && y == 6 && Board::board[0][6]->pieceType == 0 && Board::board[0][5]->pieceType == 0) {
+            if (Board::isCheckOnBlack) {
+                return false;
+            }
             // Check if opponent has line of sight to the 7,6 or 7,5 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -80,6 +89,9 @@ bool ChessKing::isMoveLegal(int x, int y) {
             Board::blackCastledKingSide = true;
             return true;
         } else if (Board::canBlackCastleQueenSide && x == 0 && y == 2 && Board::board[0][1]->pieceType == 0 && Board::board[0][2]->pieceType == 0 && Board::board[0][3]->pieceType == 0) {
+            if (Board::isCheckOnBlack) {
+                return false;
+            }
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {

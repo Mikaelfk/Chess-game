@@ -108,7 +108,6 @@ void ChessApplication::on_pushButton_clicked() {
 
 	// Get position of mouse and convert to board position
 	QPoint _Position = pushButton->mapFromGlobal(QCursor::pos());
-	qDebug() << _Position.x() << _Position.y();
 	int row = _Position.y() / 62.5;
 	int column = _Position.x() / 62.5;
 
@@ -136,7 +135,6 @@ void ChessApplication::on_pushButton_clicked() {
 
 	// Check if the clicked square has any legal moves
 	if (legalMoves.size() > 0) {
-
 		pieceChosen = true;
 		activePiecePosition = std::make_pair(row, column);
 		// For each legal move, draw a semi transparent grey circle on the board

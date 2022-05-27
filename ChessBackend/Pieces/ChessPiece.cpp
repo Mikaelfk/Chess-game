@@ -116,9 +116,18 @@ void ChessPiece::move(int x, int y, int promote) {
 		}
 		selfDestruct = true;
 	}
+
+
+	Board::isCheckOnBlack = false;
+	Board::isCheckOnWhite = false;
 	// Check if the move puts the enemy king in check
 	if (Board::isCheck(!this->isWhite)) {
 		// Check if the move puts the enemy king in checkmate
+		if (this->isWhite) {
+			Board::isCheckOnBlack = true;
+		} else {
+			Board::isCheckOnWhite = true;
+		}
 		Board::isCheckmateFunc(!this->isWhite);
 	}
 
