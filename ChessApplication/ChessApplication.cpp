@@ -40,6 +40,9 @@ ChessApplication::ChessApplication(QWidget* parent)
 
 	// Add the board widget to the layout
 	ui.boardLayout->addWidget(&view);
+	view.setMaximumSize(500, 500);
+	view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
 void ChessApplication::updateBoard() {
