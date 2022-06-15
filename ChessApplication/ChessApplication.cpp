@@ -33,7 +33,7 @@ ChessApplication::ChessApplication(QWidget* parent)
 	QGraphicsProxyWidget* proxy = scene.addWidget(pushButton);
 
 	// Connect pushButton to the slot
-	connect(pushButton, &QPushButton::released, this, &ChessApplication::on_pushButton_clicked);
+	connect(pushButton, &QPushButton::released, this, &ChessApplication::on_pushButtonClicked);
 
 	// Show the board
 	updateBoard();
@@ -138,7 +138,7 @@ void ChessApplication::updateBoard() {
 	}
 }
 
-void ChessApplication::on_pushButton_clicked() {
+void ChessApplication::on_pushButtonClicked() {
 	// Get position of mouse and convert to board position
 	QPoint _Position = pushButton->mapFromGlobal(QCursor::pos());
 	int row = _Position.y() / 62.5;
@@ -200,9 +200,11 @@ void ChessApplication::on_pushButton_clicked() {
 	updateBoard();
 
 	// add warnings if any of the kings are in check
-	scene.removeItem(kingInCheckWarning);
-	delete kingInCheckWarning;
-	kingInCheckWarning = nullptr;
+	if (kingInCheckWarning != nullptr) {
+		scene.removeItem(kingInCheckWarning);
+		delete kingInCheckWarning;
+		kingInCheckWarning = nullptr;
+	}
 
 	if (Board::isCheckOnBlack) {
 		std::tuple<int, int> blackKingPosition = Board::getKingPosition(false);

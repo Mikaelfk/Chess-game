@@ -15,7 +15,7 @@ public:
     ChessApplication(QWidget *parent = Q_NULLPTR);
 
 public slots:
-    void on_pushButton_clicked();
+    void on_pushButtonClicked();
 
 private:
 	Ui::ChessApplication ui;

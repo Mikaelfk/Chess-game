@@ -22,7 +22,7 @@ ChessPiece::ChessPiece(int x, int y, bool isWhite) {
 }
 
 bool ChessPiece::move(int x, int y, int promote) {
-	if (Board::whiteToMove != isWhite || Board::isCheckmate) {
+	if (Board::whiteToMove != isWhite) {
 		return false;
 	}
 	if (!canMoveBePerformed(x, y)) {
@@ -144,10 +144,16 @@ bool ChessPiece::move(int x, int y, int promote) {
 	// Change who's turn it is
 	Board::whiteToMove = !Board::whiteToMove;
 
+	// If the move was a capture, add the piece type to the takenPieces vector
 	if (Board::lastTakenPieceType != 0) {
 		Board::takenPieces.push_back(Board::lastTakenPieceType);
 	}
 	
+	// If 30 pieces have been taken, it is a draw.
+	if (Board::takenPieces.size() >= 30) {
+		Board::isStalemate = true;
+	}
+
 	// Commit suicide
 	if (selfDestruct) {
 		delete this;
@@ -183,6 +189,9 @@ bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
 bool ChessPiece::canMoveBePerformed(int x, int y) {
 	// Out of bound check
 	if (x < 0 || x > 7 || y < 0 || y > 7) {
+		return false;
+	}
+	if (Board::isCheckmate || Board::isStalemate) {
 		return false;
 	}
 	if (ChessPiece::willMovePutFriendlyKingInCheck(x, y)) {
