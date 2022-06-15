@@ -215,40 +215,40 @@ void ChessApplication::showTakenPiece(int &pieceType) {
 	QLabel *label = new QLabel();
 	if (pieceType == 1) {
 		label->setPixmap(QPixmap(":/Images/White Pawn.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 2) {
 		label->setPixmap(QPixmap(":/Images/White Knight.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 3) {
 		label->setPixmap(QPixmap(":/Images/White Bishop.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 4) {
 		label->setPixmap(QPixmap(":/Images/White Rook.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 5) {
 		label->setPixmap(QPixmap(":/Images/White Queen.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 6) {
 		label->setPixmap(QPixmap(":/Images/White King.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 7) {
 		label->setPixmap(QPixmap(":/Images/Black Pawn.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 8) {
 		label->setPixmap(QPixmap(":/Images/Black Knight.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 9) {
 		label->setPixmap(QPixmap(":/Images/Black Bishop.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 10) {
 		label->setPixmap(QPixmap(":/Images/Black Rook.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 11) {
 		label->setPixmap(QPixmap(":/Images/Black Queen.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 12) {
 		label->setPixmap(QPixmap(":/Images/Black King.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	}
 	label->setMaximumSize(30, 30);
 	label->setScaledContents(true);
