@@ -2,7 +2,7 @@
 # project specific logic here.
 cmake_minimum_required (VERSION 3.8)
 
-project ("Chess")
+project("Chess")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,14 +19,12 @@ qt_standard_project_setup()
 add_library(backend "ChessBackend/Board.cpp" "ChessBackend/Board.h"  "ChessBackend/Pieces/ChessBishop.cpp" "ChessBackend/Pieces/ChessBishop.cpp" "ChessBackend/Pieces/ChessBishop.h" "ChessBackend/Pieces/ChessKing.cpp" "ChessBackend/Pieces/ChessKing.h" "ChessBackend/Pieces/ChessKnight.h" "ChessBackend/Pieces/ChessKnight.h" "ChessBackend/Pieces/ChessPawn.cpp" "ChessBackend/Pieces/ChessPawn.h" "ChessBackend/Pieces/ChessPiece.cpp" "ChessBackend/Pieces/ChessPiece.h" "ChessBackend/Pieces/ChessQueen.cpp" "ChessBackend/Pieces/ChessQueen.h" "ChessBackend/Pieces/ChessRook.cpp" "ChessBackend/Pieces/ChessRook.h" "ChessBackend/Pieces/ChessKnight.cpp")
 
 # Main executable
-add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/Images/images.qrc")
-target_link_libraries(Chess PRIVATE backend)
+add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
+target_link_libraries(Chess PRIVATE backend Qt6::Widgets Qt6::Gui)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Chess PROPERTY CXX_STANDARD 20)
 endif()
-
-target_link_libraries(Chess PRIVATE Qt6::Widgets Qt6::Gui)
 
 set_target_properties(Chess PROPERTIES
     WIN32_EXECUTABLE ON

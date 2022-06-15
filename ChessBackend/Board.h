@@ -28,8 +28,6 @@ public:
 	static bool blackCastledKingSide;
 	static bool blackCastledQueenSide;
 
-
-
 	static Board& getInstance();
 	static void printBoard();
 	static std::tuple<int, int> getKingPosition(bool isWhite);

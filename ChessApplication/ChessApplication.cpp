@@ -8,6 +8,10 @@
 
 ChessApplication::ChessApplication(QWidget* parent)
 	: QMainWindow(parent), view(&scene) {
+
+	ui.setupUi(this);
+	ui.centralWidget->setMinimumSize(600, 600);
+	
 	// Initiate the board
 	Board::getInstance();
 
@@ -25,15 +29,17 @@ ChessApplication::ChessApplication(QWidget* parent)
 	pushButton->setFixedSize(QSize(500, 500));
 	QGraphicsProxyWidget* proxy = scene.addWidget(pushButton);
 
+	// Connect pushButton to the slot
 	connect(pushButton, &QPushButton::released, this, &ChessApplication::on_pushButton_clicked);
 
+	// Show the board
 	updateBoard();
 
-	setCentralWidget(&view);
+	// Add the board widget to the layout
+	ui.boardLayout->addWidget(&view);
 }
 
 void ChessApplication::updateBoard() {
-
 
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {

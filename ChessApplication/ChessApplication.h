@@ -4,6 +4,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPushButton>
+#include "ui_ChessApplication.h"
+
 
 class ChessApplication : public QMainWindow
 {
@@ -39,4 +41,7 @@ private:
 	// vector of move hints
 	std::vector<QGraphicsEllipseItem*> moveHints = {};
 
+	Ui::ChessApplication ui;
 };
+
+
