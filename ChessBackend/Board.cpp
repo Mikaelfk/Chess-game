@@ -27,6 +27,8 @@ bool Board::whiteCastledQueenSide = false;
 bool Board::blackCastledKingSide = false;
 bool Board::blackCastledQueenSide = false;
 
+int Board::lastTakenPieceType = 0;
+
 Board::Board() {
 	for (int i = 0; i < 8; i++) {
 		//Create empyy arrays for each row with size of 8

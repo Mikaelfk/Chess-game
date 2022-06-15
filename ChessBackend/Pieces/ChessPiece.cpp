@@ -21,16 +21,17 @@ ChessPiece::ChessPiece(int x, int y, bool isWhite) {
 	this->pieceType = 0;
 }
 
-void ChessPiece::move(int x, int y, int promote) {
+bool ChessPiece::move(int x, int y, int promote) {
 	if (Board::whiteToMove != isWhite || Board::isCheckmate) {
-		return;
+		return false;
 	}
 	if (!canMoveBePerformed(x, y)) {
-		return;
+		return false;
 	}
 	int x_diff = abs(x - position_x);
 
 	// Moves the piece to the new position
+	Board::lastTakenPieceType = Board::board[x][y]->pieceType;
 	Board::board[x][y] = this;
 	Board::board[position_x][position_y] = new ChessPiece();
 
@@ -64,9 +65,11 @@ void ChessPiece::move(int x, int y, int promote) {
 		if (isWhite) {
 			delete Board::board[this->position_x + 1][this->position_y];
 			Board::board[this->position_x + 1][this->position_y] = new ChessPiece();
+			Board::lastTakenPieceType = 7;
 		} else {
 			delete Board::board[this->position_x - 1][this->position_y];
 			Board::board[this->position_x - 1][this->position_y] = new ChessPiece();
+			Board::lastTakenPieceType = 1;
 		}
 	}
 
@@ -145,6 +148,7 @@ void ChessPiece::move(int x, int y, int promote) {
 	if (selfDestruct) {
 		delete this;
 	}
+	return true;
 }
 
 bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {

@@ -8,7 +8,7 @@ public:
 
 	int pieceType;
 
-	void move(int x, int y, int promote = 0);
+	bool move(int x, int y, int promote = 0);
 
 	virtual bool isMoveLegal(int x, int y) {
 		return false;

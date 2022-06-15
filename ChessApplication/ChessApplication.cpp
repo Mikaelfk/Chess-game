@@ -149,11 +149,10 @@ void ChessApplication::on_pushButton_clicked() {
 
 	// Checks if a piece is chosen and if the pair is legal
 	if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
-		int takenPieceType = Board::board[row][column]->pieceType;
-		Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column);
-		if (takenPieceType != 0) {
+		bool moveWasPerformed = Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column);
+		if (Board::lastTakenPieceType != 0 && moveWasPerformed) {
 			// Add the taken piece to the taken piece widget
-			showTakenPiece(takenPieceType);
+			showTakenPiece(Board::lastTakenPieceType);
 		}
 
 		// Empty legalMoves
