@@ -38,12 +38,13 @@ ChessApplication::ChessApplication(QWidget* parent)
 	// Show the board
 	updateBoard();
 
+	// Set size for the chess board and remove scroll bars.
 	view.setMaximumSize(500, 500);
 	view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 
-	// Add the board widget to the layout
+	// Make player info widgets
 	playerInfoLayout1 = new QHBoxLayout();
 	playerInfoLayout2 = new QHBoxLayout();
 	QWidget* playerInfo1 = new QWidget();
@@ -59,11 +60,10 @@ ChessApplication::ChessApplication(QWidget* parent)
 	playerInfoLayout2->addWidget(player2);
 
 
-
-
-	ui.boardLayout->addWidget(playerInfo1);
-	ui.boardLayout->addWidget(&view);
+	// Add the playerInfo and board widgets to the main layout
 	ui.boardLayout->addWidget(playerInfo2);
+	ui.boardLayout->addWidget(&view);
+	ui.boardLayout->addWidget(playerInfo1);
 
 
 }
@@ -176,11 +176,21 @@ void ChessApplication::on_pushButton_clicked() {
 		// For each legal move, draw a semi transparent grey circle on the board
 		if ((Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType >= 7 && (!Board::whiteToMove)) || (Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType <= 6 && Board::whiteToMove)) {
 			for (auto move : legalMoves) {
-				moveHints.push_back(new QGraphicsEllipseItem(move.second * 62.5 + 21, move.first * 62.5 + 21, 20, 20));
-				moveHints.back()->setBrush(Qt::gray);
-				moveHints.back()->setOpacity(0.3);
-				moveHints.back()->setZValue(1);
-				scene.addItem(moveHints.back());
+				QGraphicsEllipseItem* hint = nullptr;
+				if (Board::board[move.first][move.second]->pieceType != 0) {
+					hint = new QGraphicsEllipseItem(move.second * 62.5 + 1.25, move.first * 62.5 + 1.25, 60, 60);
+					hint->setBrush(Qt::NoBrush);
+					hint->setPen(QPen(Qt::black, 2));
+					hint->setOpacity(0.3);
+					hint->setZValue(1);
+				} else {
+					hint = new QGraphicsEllipseItem(move.second * 62.5 + 21, move.first * 62.5 + 21, 20, 20);
+					hint->setBrush(Qt::black);
+					hint->setOpacity(0.3);
+					hint->setZValue(1);
+				}
+				scene.addItem(hint);
+				moveHints.push_back(hint);
 			}
 		}
 	} else {
@@ -209,45 +219,45 @@ void ChessApplication::on_pushButton_clicked() {
 	scene.addItem(kingInCheckWarning);
 }
 
-void ChessApplication::showTakenPiece(int &pieceType) {
+void ChessApplication::showTakenPiece(int& pieceType) {
 
-	QLabel *label = new QLabel();
+	QLabel* label = new QLabel();
 	if (pieceType == 1) {
 		label->setPixmap(QPixmap(":/Images/White Pawn.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 2) {
 		label->setPixmap(QPixmap(":/Images/White Knight.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 3) {
 		label->setPixmap(QPixmap(":/Images/White Bishop.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 4) {
 		label->setPixmap(QPixmap(":/Images/White Rook.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 5) {
 		label->setPixmap(QPixmap(":/Images/White Queen.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 6) {
 		label->setPixmap(QPixmap(":/Images/White King.png"));
-		playerInfoLayout1->addWidget(label);
+		playerInfoLayout2->addWidget(label);
 	} else if (pieceType == 7) {
 		label->setPixmap(QPixmap(":/Images/Black Pawn.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 8) {
 		label->setPixmap(QPixmap(":/Images/Black Knight.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 9) {
 		label->setPixmap(QPixmap(":/Images/Black Bishop.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 10) {
 		label->setPixmap(QPixmap(":/Images/Black Rook.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 11) {
 		label->setPixmap(QPixmap(":/Images/Black Queen.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	} else if (pieceType == 12) {
 		label->setPixmap(QPixmap(":/Images/Black King.png"));
-		playerInfoLayout2->addWidget(label);
+		playerInfoLayout1->addWidget(label);
 	}
 	label->setMaximumSize(30, 30);
 	label->setScaledContents(true);
