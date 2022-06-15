@@ -41,6 +41,8 @@ private:
 	// vector of move hints
 	std::vector<QGraphicsEllipseItem*> moveHints = {};
 
+	QGraphicsRectItem* kingInCheckWarning = nullptr;
+
 	Ui::ChessApplication ui;
 };
 

@@ -61,7 +61,6 @@ void ChessApplication::updateBoard() {
 		for (int j = 0; j < 8; j++) {
 			if (Board::board[i][j] != nullptr) {
 				int* pieceType = &Board::board[i][j]->pieceType;
-				char name[] = "";
 				if (*pieceType == 1) {
 					board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Pawn.png"));
 					scene.addItem(board[i][j]);
@@ -161,5 +160,24 @@ void ChessApplication::on_pushButton_clicked() {
         pieceChosen = false;
     }
 
+
     updateBoard();
+
+	scene.removeItem(kingInCheckWarning);
+	delete kingInCheckWarning;
+	kingInCheckWarning = nullptr;
+
+	if (Board::isCheckOnBlack) {
+		std::tuple<int, int> blackKingPosition = Board::getKingPosition(false);
+		kingInCheckWarning = new QGraphicsRectItem(std::get<1>(blackKingPosition) * 62.5, std::get<0>(blackKingPosition) * 62.5, 62.5, 62.5);
+	} else if(Board::isCheckOnWhite) {
+		std::tuple<int, int> whiteKingPosition = Board::getKingPosition(true);
+		kingInCheckWarning = new QGraphicsRectItem(std::get<1>(whiteKingPosition) * 62.5, std::get<0>(whiteKingPosition) * 62.5, 62.5, 62.5);
+	} else {
+		return;
+	}
+	kingInCheckWarning->setBrush(Qt::red);
+    kingInCheckWarning->setOpacity(0.5);
+
+	scene.addItem(kingInCheckWarning);
 }
