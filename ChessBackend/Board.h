@@ -11,6 +11,9 @@ private:
 	Board();
 public:
 	static ChessPieceMatrix board;
+
+	static std::vector<int> takenPieces;
+
 	static bool isCheckOnWhite;
 	static bool isCheckOnBlack;
 	static bool isCheckmate;

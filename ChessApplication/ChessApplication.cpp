@@ -151,8 +151,8 @@ void ChessApplication::on_pushButton_clicked() {
 	if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
 		bool moveWasPerformed = Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column);
 		if (Board::lastTakenPieceType != 0 && moveWasPerformed) {
-			// Add the taken piece to the taken piece widget
-			showTakenPiece(Board::lastTakenPieceType);
+			// Update the taken pieces visual
+			updateTakenPieces();
 		}
 
 		// Empty legalMoves
@@ -219,47 +219,66 @@ void ChessApplication::on_pushButton_clicked() {
 	scene.addItem(kingInCheckWarning);
 }
 
-void ChessApplication::showTakenPiece(int& pieceType) {
-
+void ChessApplication::addTakenPiece(int& pieceType) {
 	QLabel* label = new QLabel();
 	if (pieceType == 1) {
 		label->setPixmap(QPixmap(":/Images/White Pawn.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 2) {
 		label->setPixmap(QPixmap(":/Images/White Knight.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 3) {
 		label->setPixmap(QPixmap(":/Images/White Bishop.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 4) {
 		label->setPixmap(QPixmap(":/Images/White Rook.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 5) {
 		label->setPixmap(QPixmap(":/Images/White Queen.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 6) {
 		label->setPixmap(QPixmap(":/Images/White King.png"));
-		playerInfoLayout2->addWidget(label);
+		takenWhitePieces.push_back(label);
 	} else if (pieceType == 7) {
 		label->setPixmap(QPixmap(":/Images/Black Pawn.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	} else if (pieceType == 8) {
 		label->setPixmap(QPixmap(":/Images/Black Knight.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	} else if (pieceType == 9) {
 		label->setPixmap(QPixmap(":/Images/Black Bishop.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	} else if (pieceType == 10) {
 		label->setPixmap(QPixmap(":/Images/Black Rook.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	} else if (pieceType == 11) {
 		label->setPixmap(QPixmap(":/Images/Black Queen.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	} else if (pieceType == 12) {
 		label->setPixmap(QPixmap(":/Images/Black King.png"));
-		playerInfoLayout1->addWidget(label);
+		takenBlackPieces.push_back(label);
 	}
 	label->setMaximumSize(30, 30);
 	label->setScaledContents(true);
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+	if (pieceType >= 7) {
+		playerInfoLayout1->addWidget(label);
+	} else {
+		playerInfoLayout2->addWidget(label);
+	}
+}
+
+void ChessApplication::updateTakenPieces() {
+	for (auto piece : takenWhitePieces) {
+		delete piece;
+	}
+	takenWhitePieces.clear();
+	for (auto piece : takenBlackPieces) {
+		delete piece;
+	}
+	takenBlackPieces.clear();
+	sort(Board::takenPieces.begin(), Board::takenPieces.end());
+	for (auto piece : Board::takenPieces) {
+		addTakenPiece(piece);
+	}
 }

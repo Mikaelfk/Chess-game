@@ -144,6 +144,10 @@ bool ChessPiece::move(int x, int y, int promote) {
 	// Change who's turn it is
 	Board::whiteToMove = !Board::whiteToMove;
 
+	if (Board::lastTakenPieceType != 0) {
+		Board::takenPieces.push_back(Board::lastTakenPieceType);
+	}
+	
 	// Commit suicide
 	if (selfDestruct) {
 		delete this;

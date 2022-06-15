@@ -10,6 +10,9 @@
 
 
 ChessPieceMatrix Board::board(8);
+
+std::vector<int> Board::takenPieces(0);
+
 bool Board::isCheckOnWhite = false;
 bool Board::isCheckOnBlack = false;
 bool Board::whiteToMove = true;
