@@ -78,52 +78,52 @@ void ChessApplication::updateBoard() {
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             if (Board::board[i][j] != nullptr) {
-                int* pieceType = &Board::board[i][j]->pieceType;
-                if (*pieceType == 1) {
+                int pieceType = Board::board[i][j]->getPieceType();
+                if (pieceType == 1) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Pawn.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 2) {
+                } else if (pieceType == 2) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Knight.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 3) {
+                } else if (pieceType == 3) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Bishop.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 4) {
+                } else if (pieceType == 4) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Rook.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 5) {
+                } else if (pieceType == 5) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Queen.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 6) {
+                } else if (pieceType == 6) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White King.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 7) {
+                } else if (pieceType == 7) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black Pawn.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 8) {
+                } else if (pieceType == 8) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black Knight.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 9) {
+                } else if (pieceType == 9) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black Bishop.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 10) {
+                } else if (pieceType == 10) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black Rook.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 11) {
+                } else if (pieceType == 11) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black Queen.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
-                } else if (*pieceType == 12) {
+                } else if (pieceType == 12) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/Black King.png"));
                     scene.addItem(board[i][j]);
                     board[i][j]->setPos(j * 62.5, i * 62.5);
@@ -145,7 +145,7 @@ void ChessApplication::on_pushButtonClicked() {
     // Checks if a piece is chosen and if the pair is legal
     if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
         // Check if the move is a pawn promotion
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType == 1 || Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType == 7) && (row == 0 || row == 7)) {
+        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 1 || Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 7) && (row == 0 || row == 7)) {
             // Create a dialog box to choose the piece to promote to
             QDialog* dialog = new QDialog();
             dialog->setWindowTitle("Pawn Promotion");
@@ -197,10 +197,10 @@ void ChessApplication::on_pushButtonClicked() {
         pieceChosen = true;
         activePiecePosition = std::make_pair(row, column);
         // For each legal move, draw a semi transparent grey circle on the board
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType >= 7 && (!Board::whiteToMove)) || (Board::board[activePiecePosition.first][activePiecePosition.second]->pieceType <= 6 && Board::whiteToMove)) {
+        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() >= 7 && (!Board::whiteToMove)) || (Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() <= 6 && Board::whiteToMove)) {
             for (auto move : legalMoves) {
                 QGraphicsEllipseItem* hint = nullptr;
-                if (Board::board[move.first][move.second]->pieceType != 0) {
+                if (Board::board[move.first][move.second]->getPieceType() != 0) {
                     hint = new QGraphicsEllipseItem(move.second * 62.5 + 1.25, move.first * 62.5 + 1.25, 60, 60);
                     hint->setBrush(Qt::NoBrush);
                     hint->setPen(QPen(Qt::black, 2));
