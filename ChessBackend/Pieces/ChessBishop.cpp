@@ -25,13 +25,15 @@ bool ChessBishop::isMoveLegal(int x, int y) {
         return false;
     }
 
+    Board &boardInstance = Board::getInstance();
+
     // Check if friendly piece in place
     if (isWhite) {
-        if (Board::board[x][y]->getPieceType() <= 6 && Board::board[x][y]->getPieceType() > 0) {
+        if (boardInstance.board[x][y]->getPieceType() <= 6 && boardInstance.board[x][y]->getPieceType() > 0) {
             return false;
         }
     } else {
-        if (Board::board[x][y]->getPieceType() >= 7 && Board::board[x][y]->getPieceType() <= 12) {
+        if (boardInstance.board[x][y]->getPieceType() >= 7 && boardInstance.board[x][y]->getPieceType() <= 12) {
             return false;
         }
     }
@@ -40,13 +42,13 @@ bool ChessBishop::isMoveLegal(int x, int y) {
     if (xDiff > 0) {
         if (yDiff > 0) {
             for (int i = 1; i < xDiff; i++) {
-                if (Board::board[this->position_x + i][this->position_y + i]->getPieceType() != 0) {
+                if (boardInstance.board[this->position_x + i][this->position_y + i]->getPieceType() != 0) {
                     return false;
                 }
             }
         } else {
             for (int i = 1; i < xDiff; i++) {
-                if (Board::board[this->position_x + i][this->position_y - i]->getPieceType() != 0) {
+                if (boardInstance.board[this->position_x + i][this->position_y - i]->getPieceType() != 0) {
                     return false;
                 }
             }
@@ -54,13 +56,13 @@ bool ChessBishop::isMoveLegal(int x, int y) {
     } else {
         if (yDiff > 0) {
             for (int i = 1; i < -xDiff; i++) {
-                if (Board::board[this->position_x - i][this->position_y + i]->getPieceType() != 0) {
+                if (boardInstance.board[this->position_x - i][this->position_y + i]->getPieceType() != 0) {
                     return false;
                 }
             }
         } else {
             for (int i = 1; i < -xDiff; i++) {
-                if (Board::board[this->position_x - i][this->position_y - i]->getPieceType() != 0) {
+                if (boardInstance.board[this->position_x - i][this->position_y - i]->getPieceType() != 0) {
                     return false;
                 }
             }

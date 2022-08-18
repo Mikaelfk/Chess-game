@@ -33,10 +33,11 @@ bool ChessPiece::move(int x, int y, int promote) {
     }
     int x_diff = abs(x - position_x);
 
+    Board& boardInstance = Board::getInstance();
     // Moves the piece to the new position
-    Board::lastTakenPieceType = Board::board[x][y]->pieceType;
-    Board::board[x][y] = this;
-    Board::board[position_x][position_y] = new ChessPiece();
+    Board::lastTakenPieceType = boardInstance.board[x][y]->pieceType;
+    boardInstance.board[x][y] = this;
+    boardInstance.board[position_x][position_y] = new ChessPiece();
 
     bool enPassantMove = Board::enPassantHappened;
     bool whiteCastledKingSide = Board::whiteCastledKingSide;
@@ -66,12 +67,12 @@ bool ChessPiece::move(int x, int y, int promote) {
     this->position_y = y;
     if (enPassantMove) {
         if (isWhite) {
-            delete Board::board[this->position_x + 1][this->position_y];
-            Board::board[this->position_x + 1][this->position_y] = new ChessPiece();
+            delete boardInstance.board[this->position_x + 1][this->position_y];
+            boardInstance.board[this->position_x + 1][this->position_y] = new ChessPiece();
             Board::lastTakenPieceType = 7;
         } else {
-            delete Board::board[this->position_x - 1][this->position_y];
-            Board::board[this->position_x - 1][this->position_y] = new ChessPiece();
+            delete boardInstance.board[this->position_x - 1][this->position_y];
+            boardInstance.board[this->position_x - 1][this->position_y] = new ChessPiece();
             Board::lastTakenPieceType = 1;
         }
     }
@@ -79,46 +80,46 @@ bool ChessPiece::move(int x, int y, int promote) {
     // Check if the move was castling
     if (whiteCastledKingSide) {
         // Move rook to position 7,5
-        delete Board::board[7][5];
-        Board::board[7][5] = Board::board[7][7];
-        Board::board[7][5]->position_x = 7;
-        Board::board[7][5]->position_y = 5;
-        Board::board[7][7] = new ChessPiece();
+        delete boardInstance.board[7][5];
+        boardInstance.board[7][5] = boardInstance.board[7][7];
+        boardInstance.board[7][5]->position_x = 7;
+        boardInstance.board[7][5]->position_y = 5;
+        boardInstance.board[7][7] = new ChessPiece();
 
     } else if (whiteCastledQueenSide) {
         // Move rook to position 7,3
-        delete Board::board[7][3];
-        Board::board[7][3] = Board::board[7][0];
-        Board::board[7][3]->position_x = 7;
-        Board::board[7][3]->position_y = 3;
-        Board::board[7][0] = new ChessPiece();
+        delete boardInstance.board[7][3];
+        boardInstance.board[7][3] = boardInstance.board[7][0];
+        boardInstance.board[7][3]->position_x = 7;
+        boardInstance.board[7][3]->position_y = 3;
+        boardInstance.board[7][0] = new ChessPiece();
     } else if (blackCastledKingSide) {
         // Move rook to position 0,5
-        delete Board::board[0][5];
-        Board::board[0][5] = Board::board[0][7];
-        Board::board[0][5]->position_x = 0;
-        Board::board[0][5]->position_y = 5;
-        Board::board[0][7] = new ChessPiece();
+        delete boardInstance.board[0][5];
+        boardInstance.board[0][5] = boardInstance.board[0][7];
+        boardInstance.board[0][5]->position_x = 0;
+        boardInstance.board[0][5]->position_y = 5;
+        boardInstance.board[0][7] = new ChessPiece();
     } else if (blackCastledQueenSide) {
         // Move rook to position 0,3
-        delete Board::board[0][3];
-        Board::board[0][3] = Board::board[0][0];
-        Board::board[0][3]->position_x = 0;
-        Board::board[0][3]->position_y = 3;
-        Board::board[0][0] = new ChessPiece();
+        delete boardInstance.board[0][3];
+        boardInstance.board[0][3] = boardInstance.board[0][0];
+        boardInstance.board[0][3]->position_x = 0;
+        boardInstance.board[0][3]->position_y = 3;
+        boardInstance.board[0][0] = new ChessPiece();
     }
 
     // Check if move is promotion
     bool selfDestruct = false;
     if ((this->pieceType == 1 && this->position_x == 0) || (this->pieceType == 7 && this->position_x == 7)) {
         if (promote == 1) {
-            Board::board[this->position_x][this->position_y] = new ChessRook(this->position_x, this->position_y, this->isWhite);
+            boardInstance.board[this->position_x][this->position_y] = new ChessRook(this->position_x, this->position_y, this->isWhite);
         } else if (promote == 2) {
-            Board::board[this->position_x][this->position_y] = new ChessBishop(this->position_x, this->position_y, this->isWhite);
+            boardInstance.board[this->position_x][this->position_y] = new ChessBishop(this->position_x, this->position_y, this->isWhite);
         } else if (promote == 3) {
-            Board::board[this->position_x][this->position_y] = new ChessKnight(this->position_x, this->position_y, this->isWhite);
+            boardInstance.board[this->position_x][this->position_y] = new ChessKnight(this->position_x, this->position_y, this->isWhite);
         } else {
-            Board::board[this->position_x][this->position_y] = new ChessQueen(this->position_x, this->position_y, this->isWhite);
+            boardInstance.board[this->position_x][this->position_y] = new ChessQueen(this->position_x, this->position_y, this->isWhite);
         }
         selfDestruct = true;
     }
@@ -126,14 +127,14 @@ bool ChessPiece::move(int x, int y, int promote) {
     Board::isCheckOnBlack = false;
     Board::isCheckOnWhite = false;
     // Check if the move puts the enemy king in check
-    if (Board::isCheck(!this->isWhite)) {
+    if (boardInstance.isCheck(!this->isWhite)) {
         // Check if the move puts the enemy king in checkmate
         if (this->isWhite) {
             Board::isCheckOnBlack = true;
         } else {
             Board::isCheckOnWhite = true;
         }
-        Board::isCheckmateFunc(!this->isWhite);
+        boardInstance.isCheckmateFunc(!this->isWhite);
     }
 
     // Check if the move makes en passant possible
@@ -164,26 +165,27 @@ bool ChessPiece::move(int x, int y, int promote) {
 }
 
 bool ChessPiece::willMovePutFriendlyKingInCheck(int x, int y) {
+    Board& boardInstance = Board::getInstance();
     // Saves the piece that is currently in the new position
-    ChessPiece* temp = Board::board[x][y];
+    ChessPiece* temp = boardInstance.board[x][y];
 
     // Moves the piece to the new position
-    Board::board[x][y] = this;
-    Board::board[this->position_x][this->position_y] = new ChessPiece();
+    boardInstance.board[x][y] = this;
+    boardInstance.board[this->position_x][this->position_y] = new ChessPiece();
     int temp_x = this->position_x;
     int temp_y = this->position_y;
     this->position_x = x;
     this->position_y = y;
 
     // Check if the move puts the friendly king in check
-    bool check = Board::isCheck(this->isWhite);
+    bool check = boardInstance.isCheck(this->isWhite);
 
     // Undo move
     this->position_x = temp_x;
     this->position_y = temp_y;
-    delete Board::board[this->position_x][this->position_y];
-    Board::board[this->position_x][this->position_y] = this;
-    Board::board[x][y] = temp;
+    delete boardInstance.board[this->position_x][this->position_y];
+    boardInstance.board[this->position_x][this->position_y] = this;
+    boardInstance.board[x][y] = temp;
 
     return check;
 }

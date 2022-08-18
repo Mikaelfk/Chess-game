@@ -10,8 +10,6 @@
 #include "Pieces/ChessQueen.h"
 #include "Pieces/ChessRook.h"
 
-ChessPieceMatrix Board::board(8);
-
 std::vector<int> Board::takenPieces(0);
 
 bool Board::isCheckOnWhite = false;
@@ -100,7 +98,7 @@ std::tuple<int, int> Board::getKingPosition(bool isWhite) {
     if (isWhite) {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if (Board::board[i][j]->getPieceType() == 6) {
+                if (board[i][j]->getPieceType() == 6) {
                     return std::make_tuple(i, j);
                 }
             }
@@ -108,7 +106,7 @@ std::tuple<int, int> Board::getKingPosition(bool isWhite) {
     }
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (Board::board[i][j]->getPieceType() == 12) {
+            if (board[i][j]->getPieceType() == 12) {
                 return std::make_tuple(i, j);
             }
         }

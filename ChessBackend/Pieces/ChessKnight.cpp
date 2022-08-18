@@ -19,7 +19,9 @@ bool ChessKnight::isMoveLegal(int x, int y) {
         return false;
     }
 
-    if (isWhite && (Board::board[x][y]->getPieceType() == 0 || Board::board[x][y]->getPieceType() >= 7)) {
+    Board &boardInstance = Board::getInstance();
+
+    if (isWhite && (boardInstance.board[x][y]->getPieceType() == 0 || boardInstance.board[x][y]->getPieceType() >= 7)) {
         if (this->position_x == x - 2 && this->position_y == y - 1) {
             return true;
         } else if (this->position_x == x - 2 && this->position_y == y + 1) {
@@ -39,7 +41,7 @@ bool ChessKnight::isMoveLegal(int x, int y) {
         } else {
             return false;
         }
-    } else if (!isWhite && (Board::board[x][y]->getPieceType() == 0 || Board::board[x][y]->getPieceType() <= 6)) {
+    } else if (!isWhite && (boardInstance.board[x][y]->getPieceType() == 0 || boardInstance.board[x][y]->getPieceType() <= 6)) {
         if (this->position_x == x - 2 && this->position_y == y - 1) {
             return true;
         } else if (this->position_x == x - 2 && this->position_y == y + 1) {

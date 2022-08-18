@@ -17,32 +17,34 @@ bool ChessPawn::isMoveLegal(int x, int y) {
         return false;
     }
 
+    Board &boardInstance = Board::getInstance();
+
     // Check if pawn move is legal
     if (isWhite) {
-        if (this->position_x == x + 1 && this->position_y == y && Board::board[x][y]->getPieceType() == 0) {
+        if (this->position_x == x + 1 && this->position_y == y && boardInstance.board[x][y]->getPieceType() == 0) {
             return true;
-        } else if (this->position_x == x + 2 && this->position_y == y && this->position_x == 6 && Board::board[x][y]->getPieceType() == 0 && Board::board[x + 1][y]->getPieceType() == 0) {
+        } else if (this->position_x == x + 2 && this->position_y == y && this->position_x == 6 && boardInstance.board[x][y]->getPieceType() == 0 && boardInstance.board[x + 1][y]->getPieceType() == 0) {
             return true;
-        } else if (this->position_x == x + 1 && this->position_y == y + 1 && Board::board[x][y]->getPieceType() >= 7) {
+        } else if (this->position_x == x + 1 && this->position_y == y + 1 && boardInstance.board[x][y]->getPieceType() >= 7) {
             return true;
-        } else if (this->position_x == x + 1 && this->position_y == y - 1 && Board::board[x][y]->getPieceType() >= 7) {
+        } else if (this->position_x == x + 1 && this->position_y == y - 1 && boardInstance.board[x][y]->getPieceType() >= 7) {
             return true;
-        } else if (this->position_x == x + 1 && (this->position_y == y + 1 || this->position_y == y - 1) && Board::board[this->position_x][y]->getPieceType() == 7 && Board::canEnPassant) {
+        } else if (this->position_x == x + 1 && (this->position_y == y + 1 || this->position_y == y - 1) && boardInstance.board[this->position_x][y]->getPieceType() == 7 && Board::canEnPassant) {
             Board::enPassantHappened = true;
             return true;
         } else {
             return false;
         }
     } else {
-        if (this->position_x == x - 1 && this->position_y == y && Board::board[x][y]->getPieceType() == 0) {
+        if (this->position_x == x - 1 && this->position_y == y && boardInstance.board[x][y]->getPieceType() == 0) {
             return true;
-        } else if (this->position_x == x - 2 && this->position_y == y && this->position_x == 1 && Board::board[x][y]->getPieceType() == 0 && Board::board[x - 1][y]->getPieceType() == 0) {
+        } else if (this->position_x == x - 2 && this->position_y == y && this->position_x == 1 && boardInstance.board[x][y]->getPieceType() == 0 && boardInstance.board[x - 1][y]->getPieceType() == 0) {
             return true;
-        } else if (this->position_x == x - 1 && this->position_y == y + 1 && Board::board[x][y]->getPieceType() > 0 && Board::board[x][y]->getPieceType() <= 6) {
+        } else if (this->position_x == x - 1 && this->position_y == y + 1 && boardInstance.board[x][y]->getPieceType() > 0 && boardInstance.board[x][y]->getPieceType() <= 6) {
             return true;
-        } else if (this->position_x == x - 1 && this->position_y == y - 1 && Board::board[x][y]->getPieceType() > 0 && Board::board[x][y]->getPieceType() <= 6) {
+        } else if (this->position_x == x - 1 && this->position_y == y - 1 && boardInstance.board[x][y]->getPieceType() > 0 && boardInstance.board[x][y]->getPieceType() <= 6) {
             return true;
-        } else if (this->position_x == x - 1 && (this->position_y == y + 1 || this->position_y == y - 1) && Board::board[this->position_x][y]->getPieceType() == 1 && Board::canEnPassant) {
+        } else if (this->position_x == x - 1 && (this->position_y == y + 1 || this->position_y == y - 1) && boardInstance.board[this->position_x][y]->getPieceType() == 1 && Board::canEnPassant) {
             Board::enPassantHappened = true;
             return true;
         } else {

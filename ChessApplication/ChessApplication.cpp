@@ -65,6 +65,7 @@ ChessApplication::ChessApplication(QWidget* parent)
 }
 
 void ChessApplication::updateBoard() {
+    Board& boardInstance = Board::getInstance();
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             if (board[i][j] != nullptr) {
@@ -77,8 +78,8 @@ void ChessApplication::updateBoard() {
     // Create the chess pieces
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (Board::board[i][j] != nullptr) {
-                int pieceType = Board::board[i][j]->getPieceType();
+            if (boardInstance.board[i][j] != nullptr) {
+                int pieceType = boardInstance.board[i][j]->getPieceType();
                 if (pieceType == 1) {
                     board[i][j] = new QGraphicsPixmapItem(QPixmap(":/Images/White Pawn.png"));
                     scene.addItem(board[i][j]);
@@ -142,10 +143,12 @@ void ChessApplication::on_pushButtonClicked() {
     // Saves the current move in a pair of ints
     std::pair<int, int> move = std::make_pair(row, column);
 
+    Board& boardInstance = Board::getInstance();
+
     // Checks if a piece is chosen and if the pair is legal
     if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
         // Check if the move is a pawn promotion
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 1 || Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 7) && (row == 0 || row == 7)) {
+        if ((boardInstance.board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 1 || boardInstance.board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 7) && (row == 0 || row == 7)) {
             // Create a dialog box to choose the piece to promote to
             QDialog* dialog = new QDialog();
             dialog->setWindowTitle("Pawn Promotion");
@@ -171,7 +174,7 @@ void ChessApplication::on_pushButtonClicked() {
             connect(knight, SIGNAL(clicked()), this, SLOT(on_knightClicked()));
             dialog->exec();
         }
-        bool moveWasPerformed = Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column, promotionPieceType);
+        bool moveWasPerformed = boardInstance.board[activePiecePosition.first][activePiecePosition.second]->move(row, column, promotionPieceType);
         promotionPieceType = 0;
         if (Board::lastTakenPieceType != 0 && moveWasPerformed) {
             // Update the taken pieces visual
@@ -182,7 +185,7 @@ void ChessApplication::on_pushButtonClicked() {
         legalMoves.clear();
     } else {
         // Saves the legal moves on the newly clicked piece.
-        legalMoves = Board::board[row][column]->getLegalMoves();
+        legalMoves = boardInstance.board[row][column]->getLegalMoves();
     }
 
     // Empty moveHints vector
@@ -197,10 +200,10 @@ void ChessApplication::on_pushButtonClicked() {
         pieceChosen = true;
         activePiecePosition = std::make_pair(row, column);
         // For each legal move, draw a semi transparent grey circle on the board
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() >= 7 && (!Board::whiteToMove)) || (Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() <= 6 && Board::whiteToMove)) {
+        if ((boardInstance.board[activePiecePosition.first][activePiecePosition.second]->getPieceType() >= 7 && (!Board::whiteToMove)) || (boardInstance.board[activePiecePosition.first][activePiecePosition.second]->getPieceType() <= 6 && Board::whiteToMove)) {
             for (auto move : legalMoves) {
                 QGraphicsEllipseItem* hint = nullptr;
-                if (Board::board[move.first][move.second]->getPieceType() != 0) {
+                if (boardInstance.board[move.first][move.second]->getPieceType() != 0) {
                     hint = new QGraphicsEllipseItem(move.second * 62.5 + 1.25, move.first * 62.5 + 1.25, 60, 60);
                     hint->setBrush(Qt::NoBrush);
                     hint->setPen(QPen(Qt::black, 2));
@@ -230,10 +233,10 @@ void ChessApplication::on_pushButtonClicked() {
     }
 
     if (Board::isCheckOnBlack) {
-        std::tuple<int, int> blackKingPosition = Board::getKingPosition(false);
+        std::tuple<int, int> blackKingPosition = boardInstance.getKingPosition(false);
         kingInCheckWarning = new QGraphicsRectItem(std::get<1>(blackKingPosition) * 62.5, std::get<0>(blackKingPosition) * 62.5, 62.5, 62.5);
     } else if (Board::isCheckOnWhite) {
-        std::tuple<int, int> whiteKingPosition = Board::getKingPosition(true);
+        std::tuple<int, int> whiteKingPosition = boardInstance.getKingPosition(true);
         kingInCheckWarning = new QGraphicsRectItem(std::get<1>(whiteKingPosition) * 62.5, std::get<0>(whiteKingPosition) * 62.5, 62.5, 62.5);
     } else {
         return;

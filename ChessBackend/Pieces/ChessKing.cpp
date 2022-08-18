@@ -23,45 +23,47 @@ bool ChessKing::isMoveLegal(int x, int y) {
         return false;
     }
 
+    Board &boardInstance = Board::getInstance();
+
     // Check if friendly piece is on the path to the x, y position
     if (isWhite) {
-        if (Board::board[x][y]->getPieceType() != 0 && Board::board[x][y]->getPieceType() <= 6) {
+        if (boardInstance.board[x][y]->getPieceType() != 0 && boardInstance.board[x][y]->getPieceType() <= 6) {
             return false;
         }
     } else {
-        if (Board::board[x][y]->getPieceType() != 0 && Board::board[x][y]->getPieceType() >= 7) {
+        if (boardInstance.board[x][y]->getPieceType() != 0 && boardInstance.board[x][y]->getPieceType() >= 7) {
             return false;
         }
     }
 
     // Check if the move is castling
     if (isWhite) {
-        if (Board::canWhiteCastleKingSide && x == 7 && y == 6 && Board::board[7][6]->getPieceType() == 0 && Board::board[7][5]->getPieceType() == 0) {
+        if (Board::canWhiteCastleKingSide && x == 7 && y == 6 && boardInstance.board[7][6]->getPieceType() == 0 && boardInstance.board[7][5]->getPieceType() == 0) {
             if (Board::isCheckOnWhite) {
                 return false;
             }
             // Check if opponent has line of sight to the 7,6 or 7,5 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (Board::board[i][j]->getPieceType() >= 7 && Board::board[i][j]->isMoveLegal(7, 6)) {
+                    if (boardInstance.board[i][j]->getPieceType() >= 7 && boardInstance.board[i][j]->isMoveLegal(7, 6)) {
                         return false;
                     }
-                    if (Board::board[i][j]->getPieceType() >= 7 && Board::board[i][j]->isMoveLegal(7, 5)) {
+                    if (boardInstance.board[i][j]->getPieceType() >= 7 && boardInstance.board[i][j]->isMoveLegal(7, 5)) {
                         return false;
                     }
                 }
             }
             Board::whiteCastledKingSide = true;
             return true;
-        } else if (Board::canWhiteCastleQueenSide && x == 7 && y == 2 && Board::board[7][1]->getPieceType() == 0 && Board::board[7][2]->getPieceType() == 0 && Board::board[7][3]->getPieceType() == 0) {
+        } else if (Board::canWhiteCastleQueenSide && x == 7 && y == 2 && boardInstance.board[7][1]->getPieceType() == 0 && boardInstance.board[7][2]->getPieceType() == 0 && boardInstance.board[7][3]->getPieceType() == 0) {
             if (Board::isCheckOnWhite) {
                 return false;
             }
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (Board::board[i][j]->getPieceType() >= 7 && Board::board[i][j]->getPieceType() >= 1) {
-                        if (Board::board[i][j]->isMoveLegal(7, 1) || Board::board[i][j]->isMoveLegal(7, 2) || Board::board[i][j]->isMoveLegal(7, 3)) {
+                    if (boardInstance.board[i][j]->getPieceType() >= 7 && boardInstance.board[i][j]->getPieceType() >= 1) {
+                        if (boardInstance.board[i][j]->isMoveLegal(7, 1) || boardInstance.board[i][j]->isMoveLegal(7, 2) || boardInstance.board[i][j]->isMoveLegal(7, 3)) {
                             return false;
                         }
                     }
@@ -71,32 +73,32 @@ bool ChessKing::isMoveLegal(int x, int y) {
             return true;
         }
     } else {
-        if (Board::canBlackCastleKingSide && x == 0 && y == 6 && Board::board[0][6]->getPieceType() == 0 && Board::board[0][5]->getPieceType() == 0) {
+        if (Board::canBlackCastleKingSide && x == 0 && y == 6 && boardInstance.board[0][6]->getPieceType() == 0 && boardInstance.board[0][5]->getPieceType() == 0) {
             if (Board::isCheckOnBlack) {
                 return false;
             }
             // Check if opponent has line of sight to the 7,6 or 7,5 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (Board::board[i][j]->getPieceType() <= 6 && Board::board[i][j]->getPieceType() >= 1 && Board::board[i][j]->isMoveLegal(0, 6)) {
+                    if (boardInstance.board[i][j]->getPieceType() <= 6 && boardInstance.board[i][j]->getPieceType() >= 1 && boardInstance.board[i][j]->isMoveLegal(0, 6)) {
                         return false;
                     }
-                    if (Board::board[i][j]->getPieceType() <= 6 && Board::board[i][j]->getPieceType() >= 1 && Board::board[i][j]->isMoveLegal(0, 5)) {
+                    if (boardInstance.board[i][j]->getPieceType() <= 6 && boardInstance.board[i][j]->getPieceType() >= 1 && boardInstance.board[i][j]->isMoveLegal(0, 5)) {
                         return false;
                     }
                 }
             }
             Board::blackCastledKingSide = true;
             return true;
-        } else if (Board::canBlackCastleQueenSide && x == 0 && y == 2 && Board::board[0][1]->getPieceType() == 0 && Board::board[0][2]->getPieceType() == 0 && Board::board[0][3]->getPieceType() == 0) {
+        } else if (Board::canBlackCastleQueenSide && x == 0 && y == 2 && boardInstance.board[0][1]->getPieceType() == 0 && boardInstance.board[0][2]->getPieceType() == 0 && boardInstance.board[0][3]->getPieceType() == 0) {
             if (Board::isCheckOnBlack) {
                 return false;
             }
             // Check if opponent has line of sight to the 7,1 or 7,2 or 7,3 positions
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (Board::board[i][j]->getPieceType() <= 6 && Board::board[i][j]->getPieceType() >= 1 && Board::board[i][j]->getPieceType() >= 1) {
-                        if (Board::board[i][j]->isMoveLegal(0, 1) || Board::board[i][j]->isMoveLegal(0, 2) || Board::board[i][j]->isMoveLegal(0, 3)) {
+                    if (boardInstance.board[i][j]->getPieceType() <= 6 && boardInstance.board[i][j]->getPieceType() >= 1 && boardInstance.board[i][j]->getPieceType() >= 1) {
+                        if (boardInstance.board[i][j]->isMoveLegal(0, 1) || boardInstance.board[i][j]->isMoveLegal(0, 2) || boardInstance.board[i][j]->isMoveLegal(0, 3)) {
                             return false;
                         }
                     }

@@ -15,14 +15,15 @@ bool ChessRook::isMoveLegal(int x, int y) {
     if (x < 0 || x > 7 || y < 0 || y > 7) {
         return false;
     }
+    Board &boardInstance = Board::getInstance();
 
     // Check if friendly piece is in the position
     if (isWhite) {
-        if (Board::board[x][y]->getPieceType() <= 6 && Board::board[x][y]->getPieceType() >= 1) {
+        if (boardInstance.board[x][y]->getPieceType() <= 6 && boardInstance.board[x][y]->getPieceType() >= 1) {
             return false;
         }
     } else {
-        if (Board::board[x][y]->getPieceType() >= 7) {
+        if (boardInstance.board[x][y]->getPieceType() >= 7) {
             return false;
         }
     }
@@ -30,13 +31,13 @@ bool ChessRook::isMoveLegal(int x, int y) {
     if (x == this->position_x) {
         if (y > this->position_y) {
             for (int i = this->position_y + 1; i < y; i++) {
-                if (Board::board[x][i]->getPieceType() != 0) {
+                if (boardInstance.board[x][i]->getPieceType() != 0) {
                     return false;
                 }
             }
         } else {
             for (int i = this->position_y - 1; i > y; i--) {
-                if (Board::board[x][i]->getPieceType() != 0) {
+                if (boardInstance.board[x][i]->getPieceType() != 0) {
                     return false;
                 }
             }
@@ -44,13 +45,13 @@ bool ChessRook::isMoveLegal(int x, int y) {
     } else if (y == this->position_y) {
         if (x > this->position_x) {
             for (int i = this->position_x + 1; i < x; i++) {
-                if (Board::board[i][y]->getPieceType() != 0) {
+                if (boardInstance.board[i][y]->getPieceType() != 0) {
                     return false;
                 }
             }
         } else {
             for (int i = this->position_x - 1; i > x; i--) {
-                if (Board::board[i][y]->getPieceType() != 0) {
+                if (boardInstance.board[i][y]->getPieceType() != 0) {
                     return false;
                 }
             }
