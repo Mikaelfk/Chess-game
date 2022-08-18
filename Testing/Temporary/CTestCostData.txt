@@ -1,6 +1,0 @@
-Board_Test 1 0.00198682
-Move_Test 1 0.0019525
-Check_Test 1 0.00203333
-Checkmate_Test 1 0.00342553
-Stalemate_Test 1 0.00264324
----

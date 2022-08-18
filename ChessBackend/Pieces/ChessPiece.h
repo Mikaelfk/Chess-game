@@ -7,6 +7,7 @@ class ChessPiece {
     ChessPiece(int x, int y, bool isWhite);
 
     int getPieceType();
+    bool getCanBeTakenByEnPassant();
 
     bool move(int x, int y, int promote = 0);
 
@@ -26,5 +27,6 @@ class ChessPiece {
     bool canMoveBePerformed(int x, int y);
 
    private:
+    bool canBeTakenByEnPassant = false;
     bool willMovePutFriendlyKingInCheck(int x, int y);
 };

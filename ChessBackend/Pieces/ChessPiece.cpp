@@ -24,6 +24,10 @@ int ChessPiece::getPieceType() {
     return this->pieceType;
 }
 
+bool ChessPiece::getCanBeTakenByEnPassant() {
+    return this->canBeTakenByEnPassant;
+}
+
 bool ChessPiece::move(int x, int y, int promote) {
     if (Board::whiteToMove != isWhite) {
         return false;
@@ -74,6 +78,14 @@ bool ChessPiece::move(int x, int y, int promote) {
             delete boardInstance.board[this->position_x - 1][this->position_y];
             boardInstance.board[this->position_x - 1][this->position_y] = new ChessPiece();
             Board::lastTakenPieceType = 1;
+        }
+    }
+    // Loop through and make sure every pawn has canBeTakenByEnPassant set to false
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            if (boardInstance.board[i][j]->pieceType == 1 || boardInstance.board[i][j]->pieceType == 7) {
+                boardInstance.board[i][j]->canBeTakenByEnPassant = false;
+            }
         }
     }
 
@@ -140,8 +152,10 @@ bool ChessPiece::move(int x, int y, int promote) {
     // Check if the move makes en passant possible
     if ((this->pieceType == 1 && x_diff == 2) || (this->pieceType == 7 && x_diff == 2)) {
         Board::canEnPassant = true;
+        this->canBeTakenByEnPassant = true;
     } else {
         Board::canEnPassant = false;
+        this->canBeTakenByEnPassant = false;
     }
 
     // Change who's turn it is
