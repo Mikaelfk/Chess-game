@@ -16,7 +16,24 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Gui)
 qt_standard_project_setup()
 
 # All the backend logic in one library
-add_library(backend "ChessBackend/Board.cpp" "ChessBackend/Board.h"  "ChessBackend/Pieces/ChessBishop.cpp" "ChessBackend/Pieces/ChessBishop.cpp" "ChessBackend/Pieces/ChessBishop.h" "ChessBackend/Pieces/ChessKing.cpp" "ChessBackend/Pieces/ChessKing.h" "ChessBackend/Pieces/ChessKnight.h" "ChessBackend/Pieces/ChessKnight.h" "ChessBackend/Pieces/ChessPawn.cpp" "ChessBackend/Pieces/ChessPawn.h" "ChessBackend/Pieces/ChessPiece.cpp" "ChessBackend/Pieces/ChessPiece.h" "ChessBackend/Pieces/ChessQueen.cpp" "ChessBackend/Pieces/ChessQueen.h" "ChessBackend/Pieces/ChessRook.cpp" "ChessBackend/Pieces/ChessRook.h" "ChessBackend/Pieces/ChessKnight.cpp")
+add_library(backend
+    ChessBackend/Board.cpp
+    ChessBackend/Board.h
+    ChessBackend/Pieces/ChessBishop.cpp
+    ChessBackend/Pieces/ChessBishop.h
+    ChessBackend/Pieces/ChessKing.cpp
+    ChessBackend/Pieces/ChessKing.h
+    ChessBackend/Pieces/ChessKnight.cpp
+    ChessBackend/Pieces/ChessKnight.h
+    ChessBackend/Pieces/ChessPawn.cpp
+    ChessBackend/Pieces/ChessPawn.h
+    ChessBackend/Pieces/ChessPiece.cpp
+    ChessBackend/Pieces/ChessPiece.h
+    ChessBackend/Pieces/ChessQueen.cpp
+    ChessBackend/Pieces/ChessQueen.h
+    ChessBackend/Pieces/ChessRook.cpp
+    ChessBackend/Pieces/ChessRook.h
+)
 
 # Main executable
 add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
@@ -66,3 +83,21 @@ add_test(NAME Stalemate_Test
 )
 
 
+
+add_executable(sliding_piece_test Tests/sliding_piece_test.cpp)
+target_link_libraries(sliding_piece_test PRIVATE backend)
+add_test(NAME Sliding_Piece_Test COMMAND sliding_piece_test)
+
+add_executable(application_test
+    Tests/application_test.cpp
+    ChessApplication/ChessApplication.cpp
+    ChessApplication/ChessApplication.h
+    ChessApplication/ChessApplication.ui
+    ChessApplication/Images/images.qrc
+)
+target_link_libraries(application_test PRIVATE backend Qt6::Widgets Qt6::Gui)
+add_test(NAME Application_Test COMMAND application_test)
+set_tests_properties(Application_Test PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    TIMEOUT 30
+)

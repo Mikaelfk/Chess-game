@@ -1,5 +1,7 @@
 #include "ChessPiece.h"
 
+#include <cstdlib>
+
 #include "../Board.h"
 #include "ChessBishop.h"
 #include "ChessKnight.h"
@@ -203,5 +205,37 @@ bool ChessPiece::canMoveBePerformed(int x, int y) {
         return false;
     }
 
+    return true;
+}
+
+bool ChessPiece::isSlidingMoveLegal(int x, int y, bool allowStraight, bool allowDiagonal) const {
+    if (x < 0 || x >= 8 || y < 0 || y >= 8) {
+        return false;
+    }
+
+    const int dx = x - position_x;
+    const int dy = y - position_y;
+    if (dx == 0 && dy == 0) {
+        return false;
+    }
+    const bool straight = dx == 0 || dy == 0;
+    const bool diagonal = std::abs(dx) == std::abs(dy);
+    if (!(allowStraight && straight) && !(allowDiagonal && diagonal)) {
+        return false;
+    }
+
+    const int targetType = Board::board[x][y]->getPieceType();
+    if (targetType != 0 && (targetType <= 6) == isWhite) {
+        return false;
+    }
+
+    const int stepX = (dx > 0) - (dx < 0);
+    const int stepY = (dy > 0) - (dy < 0);
+    for (int row = position_x + stepX, column = position_y + stepY;
+         row != x || column != y; row += stepX, column += stepY) {
+        if (Board::board[row][column]->getPieceType() != 0) {
+            return false;
+        }
+    }
     return true;
 }
