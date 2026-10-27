@@ -12,7 +12,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Gui)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Gui Concurrent)
 qt_standard_project_setup()
 
 # All the backend logic in one library
@@ -35,9 +35,12 @@ add_library(backend
     ChessBackend/Pieces/ChessRook.h
 )
 
+# Value-based rules and AI search, independent of the legacy global board API.
+add_library(chess_engine ChessBackend/Position.cpp ChessBackend/ChessAI.cpp)
+
 # Main executable
 qt_add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
-target_link_libraries(Chess PRIVATE backend Qt6::Widgets Qt6::Gui)
+target_link_libraries(Chess PRIVATE chess_engine Qt6::Widgets Qt6::Gui Qt6::Concurrent)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Chess PROPERTY CXX_STANDARD 20)
@@ -95,7 +98,7 @@ add_executable(application_test
     ChessApplication/ChessApplication.ui
     ChessApplication/Images/images.qrc
 )
-target_link_libraries(application_test PRIVATE backend Qt6::Widgets Qt6::Gui)
+target_link_libraries(application_test PRIVATE chess_engine Qt6::Widgets Qt6::Gui Qt6::Concurrent)
 add_test(NAME Application_Test COMMAND application_test)
 set_tests_properties(Application_Test PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
@@ -131,3 +134,11 @@ if(CHESS_DEPLOY_RUNTIME)
     )
     install(SCRIPT ${deploy_script})
 endif()
+
+add_executable(position_test Tests/position_test.cpp)
+target_link_libraries(position_test PRIVATE chess_engine)
+add_test(NAME Position_Test COMMAND position_test)
+add_executable(ai_test Tests/ai_test.cpp)
+target_link_libraries(ai_test PRIVATE chess_engine)
+add_test(NAME AI_Test COMMAND ai_test)
+set_tests_properties(AI_Test PROPERTIES TIMEOUT 20)

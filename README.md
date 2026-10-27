@@ -4,6 +4,29 @@
 This is bad :D
 
 
+## Play against the computer
+
+The game starts with you playing White against the computer at Medium difficulty.
+Choose **Your side** (White or Black), select **Easy**, **Medium**, or **Hard**, and
+click **New game** to apply your choices. When you choose Black, the computer
+plays White's opening move and the board rotates so your pieces are at the bottom.
+Piece selection, move hints and check highlights follow that orientation.
+
+- **Easy:** chooses a random legal move.
+- **Medium:** searches two plies ahead, balancing material and piece activity.
+- **Hard:** searches up to four plies with alpha-beta pruning and a 1.5-second
+  thinking budget. Search depth can be lower on slower machines.
+
+The computer thinks in the background. You can start a new game while it is
+thinking; its old result will be discarded. Choose **Local two-player** to play
+with another person instead. Pawn promotion offers all four choices. Checkmate,
+stalemate, insufficient material, threefold repetition and the fifty-move rule
+end the game and appear in the status bar.
+
+The GUI and AI share a copyable `chess::Position` rules engine; search never
+modifies the displayed position. The older `Board`/piece API remains covered by
+its existing tests for compatibility, but is not used by the application.
+
 ## How to run the application
 
 ### Linux

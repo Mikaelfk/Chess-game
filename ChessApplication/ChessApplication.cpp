@@ -1,12 +1,14 @@
 #include "ChessApplication.h"
 
 #include <QDialog>
+#include <QFutureWatcher>
 #include <QGraphicsPixmapItem>
-#include <QLabel>
-#include <QVBoxLayout>
+#include <QGraphicsProxyWidget>
+#include <QStatusBar>
+#include <QTimer>
+#include <QtConcurrent/QtConcurrentRun>
 #include <algorithm>
-
-#include "../ChessBackend/Board.h"
+#include <random>
 
 namespace {
 QPixmap piecePixmap(int pieceType) {
@@ -43,195 +45,217 @@ int choosePromotionPiece(QWidget* parent) {
 }
 } // namespace
 
-ChessApplication::ChessApplication(QWidget* parent)
+ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess::Position initial)
     : QMainWindow(parent), view(&scene) {
     ui.setupUi(this);
-    ui.centralWidget->setMinimumSize(600, 600);
+    setWindowTitle("Chess");
+    auto* controls = new QHBoxLayout();
+    opponentChoice = new QComboBox(this);
+    opponentChoice->setObjectName("opponentChoice");
+    opponentChoice->addItems({"Computer", "Local two-player"});
+    opponentChoice->setCurrentIndex(computerOpponent ? 0 : 1);
+    colourChoice = new QComboBox(this);
+    colourChoice->setObjectName("colourChoice");
+    colourChoice->addItems({"White", "Black"});
+    difficultyChoice = new QComboBox(this);
+    difficultyChoice->setObjectName("difficultyChoice");
+    difficultyChoice->addItems({"Easy", "Medium", "Hard"});
+    difficultyChoice->setCurrentIndex(1);
+    auto* restart = new QPushButton("New game", this);
+    restart->setObjectName("newGame");
+    controls->addWidget(opponentChoice);
+    controls->addWidget(new QLabel("Your side:", this));
+    controls->addWidget(colourChoice);
+    controls->addWidget(new QLabel("Difficulty:", this));
+    controls->addWidget(difficultyChoice);
+    controls->addWidget(restart);
+    ui.boardLayout->addLayout(controls);
+    auto* help = new QLabel("Choose a side and difficulty, then click New game.", this);
+    ui.boardLayout->addWidget(help);
+    difficultyChoice->setToolTip("Easy: relaxed play. Medium: balanced play. Hard: a stronger opponent with longer thinking time.");
+    colourChoice->setToolTip("Your pieces appear at the bottom of the board.");
+    connect(restart, &QPushButton::clicked, this, &ChessApplication::newGame);
+    connect(opponentChoice, &QComboBox::currentIndexChanged, this, [this](int index) {
+        difficultyChoice->setEnabled(index == 0);
+    });
+    difficultyChoice->setEnabled(computerOpponent);
 
-    // Initiate the board
-    Board::getInstance();
-
-    QGraphicsPixmapItem* background = new QGraphicsPixmapItem(QPixmap(":/Images/ChessBoard.png"));
-    scene.addItem(background);
-    background->setPos(0, 0);
-    background->setScale(0.5);
-    background->setZValue(-0.1);
-
-    // Add transparent QPushButton on top of the board
-    pushButton = new QPushButton();
-    // Make pushbutton transparent
-    pushButton->setFlat(true);
-    pushButton->setStyleSheet("QPushButton{background:transparent; background-color: rgba(255, 255, 255, 0); border: 0px;}");
-    // Set size of the push button
-    pushButton->setFixedSize(QSize(500, 500));
-    scene.addWidget(pushButton);
-
-    // Connect pushButton to the slot
-    connect(pushButton, &QPushButton::released, this, &ChessApplication::on_pushButtonClicked);
-
-    // Show the board
-    updateBoard();
-
-    // Set size for the chess board and remove scroll bars.
-    view.setMaximumSize(500, 500);
+    background = scene.addPixmap(QPixmap(":/Images/ChessBoard.png").scaled(500,500,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+    background->setZValue(-1);
+    background->setTransformOriginPoint(background->boundingRect().center());
+    boardInput = new QPushButton();
+    boardInput->setFlat(true);
+    boardInput->setStyleSheet("QPushButton { background: transparent; border: 0px; }");
+    boardInput->setFixedSize(500, 500);
+    auto* proxy = scene.addWidget(boardInput);
+    proxy->setZValue(3);
+    connect(boardInput, &QPushButton::released, this, &ChessApplication::on_pushButtonClicked);
+    scene.setSceneRect(0,0,500,500);
+    view.setFixedSize(502,502);
     view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    // Make player info widgets
-    playerInfoLayout1 = new QHBoxLayout();
-    playerInfoLayout2 = new QHBoxLayout();
-    QWidget* playerInfo1 = new QWidget();
-    QWidget* playerInfo2 = new QWidget();
-
-    playerInfo1->setLayout(playerInfoLayout1);
-    playerInfo2->setLayout(playerInfoLayout2);
-
-    QLabel* player1 = new QLabel("Player 1");
-    QLabel* player2 = new QLabel("Player 2");
-
-    playerInfoLayout1->addWidget(player1);
-    playerInfoLayout2->addWidget(player2);
-
-    // Add the playerInfo and board widgets to the main layout
-    ui.boardLayout->addWidget(playerInfo2);
-    ui.boardLayout->addWidget(&view);
-    ui.boardLayout->addWidget(playerInfo1);
+    topCaptures = new QHBoxLayout();
+    bottomCaptures = new QHBoxLayout();
+    topPlayer = new QLabel(this);
+    bottomPlayer = new QLabel(this);
+    topCaptures->addWidget(topPlayer);
+    bottomCaptures->addWidget(bottomPlayer);
+    ui.boardLayout->addLayout(topCaptures);
+    ui.boardLayout->addWidget(&view, 0, Qt::AlignHCenter);
+    ui.boardLayout->addLayout(bottomCaptures);
+    status = new QLabel(this);
+    status->setObjectName("gameStatus");
+    ui.statusBar->addWidget(status,1);
+    startGame(initial);
 }
 
-void ChessApplication::updateBoard() {
-    for (int row = 0; row < 8; ++row) {
-        for (int column = 0; column < 8; ++column) {
-            // Deleting a graphics item also removes it from its scene.
-            delete board[row][column];
-            board[row][column] = nullptr;
-            auto* piece = Board::board[row][column];
-            if (piece == nullptr) {
-                continue;
-            }
-            const int type = piece->getPieceType();
-            if (type != 0) {
-                board[row][column] = scene.addPixmap(piecePixmap(type));
-                board[row][column]->setPos(column * 62.5, row * 62.5);
-            }
+ChessApplication::~ChessApplication() {
+    if (cancelled) cancelled->store(true);
+}
+
+QPoint ChessApplication::displaySquare(int row, int column) const {
+    return humanWhite ? QPoint(column,row) : QPoint(7-column,7-row);
+}
+
+void ChessApplication::newGame() {
+    startGame(chess::Position::initial());
+}
+
+void ChessApplication::startGame(chess::Position position) {
+    if (cancelled) cancelled->store(true);
+    ++generation;
+    thinking = false;
+    game = position;
+    humanWhite = colourChoice->currentIndex() == 0;
+    againstComputer = opponentChoice->currentIndex() == 0;
+    difficulty = static_cast<chess::Difficulty>(difficultyChoice->currentIndex());
+    selectedMoves.clear();
+    capturedPieces.clear();
+    repetitions.clear();
+    repetitions[game.repetitionKey()] = 1;
+    background->setRotation(humanWhite ? 0 : 180);
+    topPlayer->setText(QString("%1 (%2)").arg(againstComputer ? "Computer" : "Player 2", humanWhite ? "Black" : "White"));
+    bottomPlayer->setText(QString("%1 (%2)").arg(againstComputer ? "You" : "Player 1", humanWhite ? "White" : "Black"));
+    render();
+    queueComputerMove();
+}
+
+void ChessApplication::render() {
+    for (auto* item : pieceItems) delete item;
+    for (auto* item : overlays) delete item;
+    for (auto* label : captureLabels) delete label;
+    pieceItems.clear(); overlays.clear(); captureLabels.clear();
+    for (int row = 0; row < 8; ++row) for (int col = 0; col < 8; ++col) {
+        const int piece = game.squares[row][col];
+        if (!piece) continue;
+        auto* item = scene.addPixmap(piecePixmap(piece));
+        const QPoint square = displaySquare(row,col);
+        item->setPos(square.x()*62.5,square.y()*62.5);
+        pieceItems.push_back(item);
+        if (chess::kind(piece) == chess::King && game.inCheck(chess::isWhite(piece))) {
+            auto* warning = scene.addRect(square.x()*62.5,square.y()*62.5,62.5,62.5,Qt::NoPen,Qt::red);
+            warning->setOpacity(0.4);
+            warning->setZValue(1);
+            overlays.push_back(warning);
         }
     }
+    for (const auto& move : selectedMoves) {
+        const QPoint square = displaySquare(move.toRow,move.toCol);
+        auto* hint = scene.addEllipse(square.x()*62.5+21,square.y()*62.5+21,20,20,Qt::NoPen,Qt::black);
+        hint->setOpacity(0.3);
+        hint->setZValue(2);
+        overlays.push_back(hint);
+    }
+    auto captures = capturedPieces;
+    std::sort(captures.begin(),captures.end());
+    for (int piece : captures) {
+        auto* label = new QLabel(this);
+        label->setPixmap(piecePixmap(piece));
+        label->setFixedSize(30,30);
+        label->setScaledContents(true);
+        (chess::isWhite(piece) == humanWhite ? topCaptures : bottomCaptures)->addWidget(label);
+        captureLabels.push_back(label);
+    }
+    const auto result = game.outcome();
+    const bool repetition = repetitions[game.repetitionKey()] >= 3;
+    gameOver = result != chess::Outcome::Playing || repetition;
+    if (result == chess::Outcome::Checkmate) {
+        if (againstComputer) status->setText(game.whiteToMove == humanWhite ? "Checkmate - Computer wins." : "Checkmate - You win!");
+        else status->setText(game.whiteToMove ? "Checkmate - Black wins." : "Checkmate - White wins.");
+    } else if (result == chess::Outcome::Stalemate) status->setText("Draw - stalemate.");
+    else if (result == chess::Outcome::FiftyMoveDraw) status->setText("Draw - fifty-move rule.");
+    else if (result == chess::Outcome::InsufficientMaterial) status->setText("Draw - insufficient material.");
+    else if (repetition) status->setText("Draw - threefold repetition.");
+    else if (thinking) status->setText("Computer is thinking...");
+    else {
+        const QString turn = againstComputer ? "Your turn" : (game.whiteToMove ? "White to move" : "Black to move");
+        status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
+    }
+    boardInput->setEnabled(!gameOver && !thinking && (!againstComputer || game.whiteToMove == humanWhite));
 }
 
 void ChessApplication::on_pushButtonClicked() {
-    // Get position of mouse and convert to board position
-    QPoint _Position = pushButton->mapFromGlobal(QCursor::pos());
-    int row = _Position.y() / 62.5;
-    int column = _Position.x() / 62.5;
-
-    // Saves the current move in a pair of ints
-    std::pair<int, int> move = std::make_pair(row, column);
-
-    int promotionPieceType = 0;
-
-    // Checks if a piece is chosen and if the pair is legal
-    if (pieceChosen && (std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())) {
-        // Check if the move is a pawn promotion
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 1 || Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() == 7) && (row == 0 || row == 7)) {
-            promotionPieceType = choosePromotionPiece(this);
+    if (gameOver || thinking || (againstComputer && game.whiteToMove != humanWhite)) return;
+    const QPoint point = boardInput->mapFromGlobal(QCursor::pos());
+    if (point.x() < 0 || point.y() < 0 || point.x() >= 500 || point.y() >= 500) return;
+    const int col = humanWhite ? int(point.x()/62.5) : 7-int(point.x()/62.5);
+    const int row = humanWhite ? int(point.y()/62.5) : 7-int(point.y()/62.5);
+    const auto found = std::find_if(selectedMoves.begin(),selectedMoves.end(),[&](const chess::Move& move) {
+        return move.toRow == row && move.toCol == col;
+    });
+    if (found != selectedMoves.end()) {
+        chess::Move move = *found;
+        if (chess::kind(game.squares[move.fromRow][move.fromCol]) == chess::Pawn && (row == 0 || row == 7)) {
+            const unsigned current = generation;
+            const int choices[] = {chess::Queen,chess::Rook,chess::Bishop,chess::Knight};
+            move.promotion = choices[choosePromotionPiece(this)];
+            if (current != generation) return;
         }
-        bool moveWasPerformed = Board::board[activePiecePosition.first][activePiecePosition.second]->move(row, column, promotionPieceType);
-        if (Board::lastTakenPieceType != 0 && moveWasPerformed) {
-            // Update the taken pieces visual
-            updateTakenPieces();
-        }
-
-        // Empty legalMoves
-        legalMoves.clear();
-    } else {
-        // Saves the legal moves on the newly clicked piece.
-        legalMoves = Board::board[row][column]->getLegalMoves();
-    }
-
-    // Empty moveHints vector
-    for (auto hint : moveHints) {
-        scene.removeItem(hint);
-        delete hint;
-    }
-    moveHints.clear();
-
-    // Check if the clicked square has any legal moves
-    if (legalMoves.size() > 0) {
-        pieceChosen = true;
-        activePiecePosition = std::make_pair(row, column);
-        // For each legal move, draw a semi transparent grey circle on the board
-        if ((Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() >= 7 && (!Board::whiteToMove)) || (Board::board[activePiecePosition.first][activePiecePosition.second]->getPieceType() <= 6 && Board::whiteToMove)) {
-            for (auto move : legalMoves) {
-                QGraphicsEllipseItem* hint = nullptr;
-                if (Board::board[move.first][move.second]->getPieceType() != 0) {
-                    hint = new QGraphicsEllipseItem(move.second * 62.5 + 1.25, move.first * 62.5 + 1.25, 60, 60);
-                    hint->setBrush(Qt::NoBrush);
-                    hint->setPen(QPen(Qt::black, 2));
-                    hint->setOpacity(0.3);
-                    hint->setZValue(1);
-                } else {
-                    hint = new QGraphicsEllipseItem(move.second * 62.5 + 21, move.first * 62.5 + 21, 20, 20);
-                    hint->setBrush(Qt::black);
-                    hint->setOpacity(0.3);
-                    hint->setZValue(1);
-                }
-                scene.addItem(hint);
-                moveHints.push_back(hint);
-            }
-        }
-    } else {
-        pieceChosen = false;
-    }
-
-    updateBoard();
-
-    // add warnings if any of the kings are in check
-    if (kingInCheckWarning != nullptr) {
-        scene.removeItem(kingInCheckWarning);
-        delete kingInCheckWarning;
-        kingInCheckWarning = nullptr;
-    }
-
-    if (Board::isCheckOnBlack) {
-        std::tuple<int, int> blackKingPosition = Board::getKingPosition(false);
-        kingInCheckWarning = new QGraphicsRectItem(std::get<1>(blackKingPosition) * 62.5, std::get<0>(blackKingPosition) * 62.5, 62.5, 62.5);
-    } else if (Board::isCheckOnWhite) {
-        std::tuple<int, int> whiteKingPosition = Board::getKingPosition(true);
-        kingInCheckWarning = new QGraphicsRectItem(std::get<1>(whiteKingPosition) * 62.5, std::get<0>(whiteKingPosition) * 62.5, 62.5, 62.5);
-    } else {
+        applyMove(move);
+        queueComputerMove();
         return;
     }
-    kingInCheckWarning->setBrush(Qt::red);
-    kingInCheckWarning->setOpacity(0.5);
-
-    scene.addItem(kingInCheckWarning);
+    selectedMoves.clear();
+    for (const auto& move : game.legalMoves()) if (move.fromRow == row && move.fromCol == col) selectedMoves.push_back(move);
+    render();
 }
 
-void ChessApplication::addTakenPiece(int pieceType) {
-    if (pieceType < 1 || pieceType > 12) {
-        return;
+void ChessApplication::applyMove(const chess::Move& move) {
+    int captured = game.squares[move.toRow][move.toCol];
+    if (chess::kind(game.squares[move.fromRow][move.fromCol]) == chess::Pawn && move.fromCol != move.toCol && !captured) {
+        captured = game.squares[move.fromRow][move.toCol];
     }
-    auto* label = new QLabel();
-    label->setPixmap(piecePixmap(pieceType));
-    auto& takenPieces = pieceType >= 7 ? takenBlackPieces : takenWhitePieces;
-    takenPieces.push_back(label);
-    label->setMaximumSize(30, 30);
-    label->setScaledContents(true);
-    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    auto* layout = pieceType >= 7 ? playerInfoLayout1 : playerInfoLayout2;
-    layout->addWidget(label);
+    if (!game.play(move)) return;
+    if (captured) capturedPieces.push_back(captured);
+    ++repetitions[game.repetitionKey()];
+    selectedMoves.clear();
+    render();
 }
 
-void ChessApplication::updateTakenPieces() {
-    for (auto piece : takenWhitePieces) {
-        delete piece;
-    }
-    takenWhitePieces.clear();
-    for (auto piece : takenBlackPieces) {
-        delete piece;
-    }
-    takenBlackPieces.clear();
-    sort(Board::takenPieces.begin(), Board::takenPieces.end());
-    for (auto piece : Board::takenPieces) {
-        addTakenPiece(piece);
-    }
+void ChessApplication::queueComputerMove() {
+    if (!againstComputer || gameOver || game.whiteToMove == humanWhite || thinking) return;
+    thinking = true;
+    cancelled = std::make_shared<std::atomic_bool>(false);
+    const auto token = cancelled;
+    const auto snapshot = game;
+    const auto level = difficulty;
+    const unsigned current = generation;
+    render();
+    // Give the just-played move and thinking indicator time to paint first.
+    QTimer::singleShot(100,this,[this,token,snapshot,level,current] {
+        if (token->load() || current != generation) return;
+        auto* watcher = new QFutureWatcher<chess::SearchResult>(this);
+        connect(watcher,&QFutureWatcher<chess::SearchResult>::finished,this,[this,watcher,current] {
+            const auto result = watcher->result();
+            watcher->deleteLater();
+            if (current != generation) return;
+            thinking = false;
+            if (result.move) applyMove(*result.move);
+            else render();
+        });
+        watcher->setFuture(QtConcurrent::run([snapshot,level,token] {
+            return chess::chooseMove(snapshot,level,*token,std::random_device{}());
+        }));
+    });
 }
