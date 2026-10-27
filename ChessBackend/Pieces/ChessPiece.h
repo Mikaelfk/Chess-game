@@ -1,10 +1,12 @@
 #pragma once
+#include <utility>
 #include <vector>
 
 class ChessPiece {
    public:
     ChessPiece();
     ChessPiece(int x, int y, bool isWhite);
+    virtual ~ChessPiece() = default;
 
     int getPieceType();
 
@@ -24,6 +26,7 @@ class ChessPiece {
     int pieceType;
 
     bool canMoveBePerformed(int x, int y);
+    bool isSlidingMoveLegal(int x, int y, bool allowStraight, bool allowDiagonal) const;
 
    private:
     bool willMovePutFriendlyKingInCheck(int x, int y);
