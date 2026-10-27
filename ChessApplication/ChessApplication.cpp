@@ -6,11 +6,16 @@
 #include <QGraphicsProxyWidget>
 #include <QStatusBar>
 #include <QTimer>
+#include <QVariantAnimation>
 #include <QtConcurrent/QtConcurrentRun>
 #include <algorithm>
+#include <cmath>
 #include <random>
 
 namespace {
+constexpr int moveDurationMs = 220;
+constexpr int computerMovePauseMs = 450;
+
 QPixmap piecePixmap(int pieceType) {
     static const char* paths[] = {
         "", ":/Images/White Pawn.png", ":/Images/White Knight.png",
@@ -112,6 +117,14 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
 
 ChessApplication::~ChessApplication() {
     if (cancelled) cancelled->store(true);
+    stopMoveAnimation();
+}
+
+void ChessApplication::stopMoveAnimation() {
+    if (!moveAnimation) return;
+    moveAnimation->stop();
+    delete moveAnimation;
+    moveAnimation = nullptr;
 }
 
 QPoint ChessApplication::displaySquare(int row, int column) const {
@@ -125,6 +138,7 @@ void ChessApplication::newGame() {
 void ChessApplication::startGame(chess::Position position) {
     if (cancelled) cancelled->store(true);
     ++generation;
+    stopMoveAnimation();
     thinking = false;
     game = position;
     humanWhite = colourChoice->currentIndex() == 0;
@@ -192,11 +206,11 @@ void ChessApplication::render() {
         const QString turn = againstComputer ? "Your turn" : (game.whiteToMove ? "White to move" : "Black to move");
         status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
     }
-    boardInput->setEnabled(!gameOver && !thinking && (!againstComputer || game.whiteToMove == humanWhite));
+    boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
 }
 
 void ChessApplication::on_pushButtonClicked() {
-    if (gameOver || thinking || (againstComputer && game.whiteToMove != humanWhite)) return;
+    if (gameOver || thinking || moveAnimating() || (againstComputer && game.whiteToMove != humanWhite)) return;
     const QPoint point = boardInput->mapFromGlobal(QCursor::pos());
     if (point.x() < 0 || point.y() < 0 || point.x() >= 500 || point.y() >= 500) return;
     const int col = humanWhite ? int(point.x()/62.5) : 7-int(point.x()/62.5);
@@ -213,7 +227,6 @@ void ChessApplication::on_pushButtonClicked() {
             if (current != generation) return;
         }
         applyMove(move);
-        queueComputerMove();
         return;
     }
     selectedMoves.clear();
@@ -222,19 +235,66 @@ void ChessApplication::on_pushButtonClicked() {
 }
 
 void ChessApplication::applyMove(const chess::Move& move) {
+    if (moveAnimating()) return;
+    const int piece = game.squares[move.fromRow][move.fromCol];
     int captured = game.squares[move.toRow][move.toCol];
-    if (chess::kind(game.squares[move.fromRow][move.fromCol]) == chess::Pawn && move.fromCol != move.toCol && !captured) {
+    if (chess::kind(piece) == chess::Pawn && move.fromCol != move.toCol && !captured) {
         captured = game.squares[move.fromRow][move.toCol];
     }
     if (!game.play(move)) return;
     if (captured) capturedPieces.push_back(captured);
     ++repetitions[game.repetitionKey()];
     selectedMoves.clear();
-    render();
+    for (auto* item : overlays) delete item;
+    overlays.clear();
+
+    // Keep the previous board visible until the pieces reach their destinations.
+    // Captures disappear and promoted pawns change appearance on arrival.
+    boardInput->setEnabled(false);
+    status->setText("Moving...");
+    moveAnimation = new QParallelAnimationGroup(this);
+    auto animatePiece = [&](int fromRow, int fromCol, int toRow, int toCol) {
+        const QPoint from = displaySquare(fromRow,fromCol);
+        const QPoint to = displaySquare(toRow,toCol);
+        for (auto* item : pieceItems) {
+            if (item->pos() != QPointF(from.x()*62.5,from.y()*62.5)) continue;
+            item->setZValue(2); // Slide above stationary pieces during captures.
+            auto* motion = new QVariantAnimation();
+            motion->setDuration(moveDurationMs);
+            motion->setStartValue(item->pos());
+            motion->setEndValue(QPointF(to.x()*62.5,to.y()*62.5));
+            motion->setEasingCurve(QEasingCurve::InOutCubic);
+            connect(motion,&QVariantAnimation::valueChanged,this,[item](const QVariant& value) {
+                item->setPos(value.toPointF());
+            });
+            moveAnimation->addAnimation(motion);
+            break;
+        }
+    };
+    animatePiece(move.fromRow,move.fromCol,move.toRow,move.toCol);
+    if (chess::kind(piece) == chess::King && std::abs(move.toCol-move.fromCol) == 2) {
+        animatePiece(move.fromRow,move.toCol == 6 ? 7 : 0,move.toRow,move.toCol == 6 ? 5 : 3);
+    }
+    auto* animation = moveAnimation;
+    if (animation->animationCount() == 0) {
+        stopMoveAnimation();
+        render();
+        queueComputerMove();
+        return;
+    }
+    const unsigned current = generation;
+    connect(animation,&QParallelAnimationGroup::finished,this,[this,animation,current] {
+        if (current != generation) return;
+        moveAnimation = nullptr;
+        animation->deleteLater();
+        render();
+        queueComputerMove();
+    });
+    animation->start();
 }
 
 void ChessApplication::queueComputerMove() {
-    if (!againstComputer || gameOver || game.whiteToMove == humanWhite || thinking) return;
+    if (!againstComputer || gameOver || game.whiteToMove == humanWhite || thinking || moveAnimating()) return;
     thinking = true;
     cancelled = std::make_shared<std::atomic_bool>(false);
     const auto token = cancelled;
@@ -246,13 +306,21 @@ void ChessApplication::queueComputerMove() {
     QTimer::singleShot(100,this,[this,token,snapshot,level,current] {
         if (token->load() || current != generation) return;
         auto* watcher = new QFutureWatcher<chess::SearchResult>(this);
-        connect(watcher,&QFutureWatcher<chess::SearchResult>::finished,this,[this,watcher,current] {
+        connect(watcher,&QFutureWatcher<chess::SearchResult>::finished,this,[this,watcher,current,token] {
             const auto result = watcher->result();
             watcher->deleteLater();
-            if (current != generation) return;
-            thinking = false;
-            if (result.move) applyMove(*result.move);
-            else render();
+            if (current != generation || token->load()) return;
+            if (!result.move) {
+                thinking = false;
+                render();
+                return;
+            }
+            // Even a fast search gets a visible pause; never block the GUI thread.
+            QTimer::singleShot(computerMovePauseMs,this,[this,current,token,move=*result.move] {
+                if (current != generation || token->load()) return;
+                thinking = false;
+                applyMove(move);
+            });
         });
         watcher->setFuture(QtConcurrent::run([snapshot,level,token] {
             return chess::chooseMove(snapshot,level,*token,std::random_device{}());

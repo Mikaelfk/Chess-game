@@ -17,6 +17,11 @@ Piece selection, move hints and check highlights follow that orientation.
 - **Hard:** searches up to four plies with alpha-beta pruning and a 1.5-second
   thinking budget. Search depth can be lower on slower machines.
 
+Moves slide smoothly between squares, including both pieces during castling.
+Captures disappear and promoted pawns change appearance when the move finishes.
+The computer pauses briefly before each move, even on Easy difficulty. Board
+input is locked during movement so turns cannot overlap.
+
 The computer thinks in the background. You can start a new game while it is
 thinking; its old result will be discarded. Choose **Local two-player** to play
 with another person instead. Pawn promotion offers all four choices. Checkmate,

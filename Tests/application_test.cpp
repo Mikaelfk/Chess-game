@@ -1,5 +1,6 @@
 #include "../ChessApplication/ChessApplication.h"
 #include <iostream>
+#include <algorithm>
 #include <QElapsedTimer>
 #include <QThread>
 
@@ -9,6 +10,8 @@
 #include <QGraphicsProxyWidget>
 #include <QLabel>
 #include <QTimer>
+#include <QParallelAnimationGroup>
+#include <QVariantAnimation>
 #include <cstdlib>
 
 void require(bool condition, const char* message) {
@@ -36,18 +39,74 @@ void requirePieceImage(ChessApplication& window, int row, int column, const QStr
     require(false, "Piece image not found");
 }
 
-void clickSquare(ChessApplication& window, int row, int column) {
+void processFor(int milliseconds) {
+    QElapsedTimer timer;
+    timer.start();
+    while(timer.elapsed() < milliseconds) {
+        QApplication::processEvents();
+        QThread::msleep(5);
+    }
+}
+
+void waitForAnimation(ChessApplication& window) {
+    QElapsedTimer timer;
+    timer.start();
+    while(window.moveAnimating() && timer.elapsed() < 3000) {
+        QApplication::processEvents();
+        QThread::msleep(5);
+    }
+    require(!window.moveAnimating(), "Piece animation did not finish");
+}
+
+void clickSquare(ChessApplication& window, int row, int column, bool wait = true) {
     for (auto* item : boardScene(window)->items()) {
         if (auto* proxy = dynamic_cast<QGraphicsProxyWidget*>(item)) {
             auto* button = qobject_cast<QPushButton*>(proxy->widget());
             require(button != nullptr, "Missing board input button");
             QCursor::setPos(button->mapToGlobal(QPoint(column * 62.5 + 30, row * 62.5 + 30)));
             button->click();
-            QApplication::processEvents();
+            if(wait) {
+                QApplication::processEvents();
+                waitForAnimation(window);
+            }
             return;
         }
     }
     require(false, "Missing board input proxy");
+}
+
+QGraphicsPixmapItem* pieceAt(ChessApplication& window, int row, int column) {
+    const QPointF point(column*62.5,row*62.5);
+    for(auto* item : boardScene(window)->items()) {
+        if(auto* pixmap = dynamic_cast<QGraphicsPixmapItem*>(item)) {
+            if(pixmap->zValue() != -1 && pixmap->pos() == point) return pixmap;
+        }
+    }
+    require(false, "Piece not found on starting square");
+    return nullptr;
+}
+
+void advanceAnimationHalfway(ChessApplication& window) {
+    require(window.moveAnimating(), "Expected active movement animation");
+    for(auto* animation : window.findChildren<QParallelAnimationGroup*>()) {
+        if(animation->state() == QAbstractAnimation::Running) {
+            require(animation->duration() >= 120, "Movement animation is too short to be visible");
+            animation->setCurrentTime(animation->duration()/2);
+            return;
+        }
+    }
+    require(false, "Movement animation group not found");
+}
+
+int pieceImageCount(ChessApplication& window, const QString& resource) {
+    const QImage image = QPixmap(resource).toImage();
+    int count = 0;
+    for(auto* item : boardScene(window)->items()) {
+        if(auto* pixmap = dynamic_cast<QGraphicsPixmapItem*>(item)) {
+            if(pixmap->pixmap().toImage() == image) ++count;
+        }
+    }
+    return count;
 }
 
 void testRenderingAndCapture() {
@@ -114,7 +173,15 @@ void testPromotion(bool white, int choice) {
         }
         require(false, "Promotion choice missing");
     });
-    clickSquare(window, to, 0);
+    auto* pawn = pieceAt(window,from,0);
+    clickSquare(window, to, 0, false);
+    require(window.moveAnimating(), "Promotion did not animate");
+    advanceAnimationHalfway(window);
+    require(pawn->pixmap().toImage() == QPixmap(white ? ":/Images/White Pawn.png" : ":/Images/Black Pawn.png").toImage(),
+            "Pawn transformed before reaching the promotion square");
+    require(pawn->pos().y() > std::min(from,to)*62.5 && pawn->pos().y() < std::max(from,to)*62.5,
+            "Promoting pawn did not move through an intermediate position");
+    waitForAnimation(window);
     const int types[] = {5, 4, 3, 2};
     const int type = types[choice < 0 ? 0 : choice] + (white ? 0 : 6);
     require(window.position().squares[to][0] == type, "Wrong promotion result");
@@ -126,10 +193,10 @@ void testPromotion(bool white, int choice) {
 
 void waitForComputer(ChessApplication& window) {
     QElapsedTimer timer; timer.start();
-    while(window.computerThinking() && timer.elapsed()<5000) {
+    while((window.computerThinking() || window.moveAnimating()) && timer.elapsed()<6000) {
         QApplication::processEvents(); QThread::msleep(5);
     }
-    require(!window.computerThinking(), "Computer did not finish its move");
+    require(!window.computerThinking() && !window.moveAnimating(), "Computer did not finish its move");
 }
 
 void restart(ChessApplication& window, bool white, bool computer, int difficulty = 0) {
@@ -230,9 +297,172 @@ void testRepetitionAndReset() {
     require(!window.position().whiteToMove,"New game did not accept input");
 }
 
+void testSlidingAnimationAndInputLock() {
+    ChessApplication window(nullptr,false);
+    window.show(); QApplication::processEvents();
+    clickSquare(window,6,4);
+    auto* pawn = pieceAt(window,6,4);
+    clickSquare(window,4,4,false);
+    require(window.moveAnimating(), "Human move did not start an animation");
+    const auto committed = window.position().repetitionKey();
+    advanceAnimationHalfway(window);
+    require(pawn->pos().x()==4*62.5 && pawn->pos().y()>4*62.5 && pawn->pos().y()<6*62.5,
+            "Piece jumped directly to its destination");
+    require(pawn->zValue()>0, "Moving piece was not raised above stationary pieces");
+    clickSquare(window,1,0,false);
+    window.on_pushButtonClicked(); // Also exercise the slot guard directly.
+    require(window.position().repetitionKey()==committed, "Input changed the board during animation");
+    waitForAnimation(window);
+    requirePieceImage(window,4,4,":/Images/White Pawn.png");
+    require(pieceImageCount(window,":/Images/White Pawn.png")==8, "Animation duplicated a piece");
+
+    restart(window,false,false);
+    clickSquare(window,1,3);
+    pawn = pieceAt(window,1,3); // e2 from Black's viewpoint.
+    clickSquare(window,3,3,false);
+    advanceAnimationHalfway(window);
+    require(pawn->pos().x()==3*62.5 && pawn->pos().y()>62.5 && pawn->pos().y()<3*62.5,
+            "Animation did not follow the rotated board coordinates");
+    waitForAnimation(window);
+    requirePieceImage(window,3,3,":/Images/White Pawn.png");
+}
+
+void testCastlingAnimations() {
+    for(bool white : {true,false}) for(bool kingSide : {true,false}) {
+        chess::Position p;
+        p.squares[7][4]=chess::King;
+        p.squares[0][4]=chess::King+6;
+        const int row=white?7:0, rookFrom=kingSide?7:0;
+        const int kingTo=kingSide?6:2, rookTo=kingSide?5:3;
+        p.squares[row][rookFrom]=chess::Rook+(white?0:6);
+        p.castling[(white?0:2)+(kingSide?0:1)]=true;
+        p.whiteToMove=white;
+        ChessApplication window(nullptr,false,p);
+        window.show(); QApplication::processEvents();
+        clickSquare(window,row,4);
+        auto* king = pieceAt(window,row,4);
+        auto* rook = pieceAt(window,row,rookFrom);
+        clickSquare(window,row,kingTo,false);
+        advanceAnimationHalfway(window);
+        require(king->pos().x()>std::min(4,kingTo)*62.5 && king->pos().x()<std::max(4,kingTo)*62.5,
+                "Castling king did not animate");
+        require(rook->pos().x()>std::min(rookFrom,rookTo)*62.5 && rook->pos().x()<std::max(rookFrom,rookTo)*62.5,
+                "Castling rook did not animate alongside the king");
+        waitForAnimation(window);
+        requirePieceImage(window,row,kingTo,white?":/Images/White King.png":":/Images/Black King.png");
+        requirePieceImage(window,row,rookTo,white?":/Images/White Rook.png":":/Images/Black Rook.png");
+    }
+}
+
+void testCaptureAnimations() {
+    for(bool enPassant : {false,true}) {
+        chess::Position p;
+        p.squares[7][7]=chess::King;
+        p.squares[0][7]=chess::King+6;
+        const int fromRow=enPassant?3:4, fromCol=enPassant?4:0, toRow=enPassant?2:4, toCol=3;
+        p.squares[fromRow][fromCol]=enPassant?chess::Pawn:chess::Rook;
+        p.squares[enPassant?3:4][3]=(enPassant?chess::Pawn:chess::Bishop)+6;
+        if(enPassant) {p.enPassantRow=2;p.enPassantCol=3;}
+        const QString captured=enPassant?":/Images/Black Pawn.png":":/Images/Black Bishop.png";
+        ChessApplication window(nullptr,false,p);
+        window.show(); QApplication::processEvents();
+        clickSquare(window,fromRow,fromCol);
+        auto* mover=pieceAt(window,fromRow,fromCol);
+        clickSquare(window,toRow,toCol,false);
+        advanceAnimationHalfway(window);
+        require(mover->pos()!=QPointF(fromCol*62.5,fromRow*62.5)
+                && mover->pos()!=QPointF(toCol*62.5,toRow*62.5), "Capture did not animate");
+        require(pieceImageCount(window,captured)==1, "Captured piece disappeared before arrival");
+        waitForAnimation(window);
+        require(pieceImageCount(window,captured)==0, "Captured piece remained on the board after animation");
+        requirePieceImage(window,toRow,toCol,enPassant?":/Images/White Pawn.png":":/Images/White Rook.png");
+        int labels=0;
+        for(auto* label:window.findChildren<QLabel*>()) if(!label->pixmap().isNull()) ++labels;
+        require(labels==1,"Capture animation did not update captured-piece display");
+    }
+}
+
+void testAIDelayAndAnimationCancellation() {
+    ChessApplication window;
+    window.show(); QApplication::processEvents();
+    restart(window,false,true,0); // Easy computes almost immediately, but must still pause.
+    const auto opening=window.position().repetitionKey();
+    QElapsedTimer timer; timer.start();
+    processFor(350);
+    require(window.computerThinking() && !window.moveAnimating() && window.position().repetitionKey()==opening,
+            "Computer opening move did not have a visible delay");
+    QElapsedTimer searchWait; searchWait.start();
+    while(window.computerThinking() && searchWait.elapsed()<5000) {
+        QApplication::processEvents(); QThread::msleep(5);
+    }
+    require(window.moveAnimating(), "Computer move did not animate after the delay");
+    advanceAnimationHalfway(window);
+    bool sliding=false;
+    for(auto* group:window.findChildren<QParallelAnimationGroup*>()) {
+        if(group->state()!=QAbstractAnimation::Running) continue;
+        auto* motion=qobject_cast<QVariantAnimation*>(group->animationAt(0));
+        require(motion!=nullptr,"Computer movement track missing");
+        const QPointF current=motion->currentValue().toPointF();
+        require(current!=motion->startValue().toPointF() && current!=motion->endValue().toPointF(),
+                "Computer movement jumped to an endpoint");
+        for(auto* item:boardScene(window)->items()) {
+            if(dynamic_cast<QGraphicsPixmapItem*>(item) && item->zValue()==2 && item->pos()==current) sliding=true;
+        }
+    }
+    require(sliding,"Computer animation did not move the displayed piece");
+    waitForComputer(window);
+    require(timer.elapsed()>=350 && !window.position().whiteToMove, "Computer opening was not completed");
+
+    restart(window,true,true,0);
+    clickSquare(window,6,4); clickSquare(window,4,4);
+    const auto afterHuman=window.position().repetitionKey();
+    processFor(350);
+    require(window.computerThinking() && !window.moveAnimating() && window.position().repetitionKey()==afterHuman,
+            "Computer reply did not have a visible delay");
+    waitForComputer(window);
+    require(window.position().whiteToMove,"Delayed computer reply did not return the turn");
+
+    restart(window,false,true,0);
+    processFor(250); // Easy's result is held pending its display delay.
+    require(window.computerThinking() && !window.moveAnimating(),"AI result was not pending during delay");
+    restart(window,true,true,0);
+    const auto initial=window.position().repetitionKey();
+    processFor(700);
+    require(!window.computerThinking() && !window.moveAnimating() && window.position().repetitionKey()==initial,
+            "Held AI result moved pieces after New game");
+
+    restart(window,true,false);
+    clickSquare(window,6,4); clickSquare(window,4,4,false);
+    advanceAnimationHalfway(window);
+    restart(window,true,false);
+    processFor(300);
+    require(!window.moveAnimating() && window.position().repetitionKey()==chess::Position::initial().repetitionKey(),
+            "Cancelled movement changed the restarted board");
+    requirePieceImage(window,6,4,":/Images/White Pawn.png");
+
+    auto closing=std::make_unique<ChessApplication>(nullptr,false);
+    closing->show(); QApplication::processEvents();
+    clickSquare(*closing,6,4); clickSquare(*closing,4,4,false);
+    require(closing->moveAnimating(),"Close test did not start an animation");
+    closing.reset();
+    processFor(300); // No callback may touch the deleted moving graphics item.
+
+    closing=std::make_unique<ChessApplication>();
+    closing->show(); QApplication::processEvents();
+    restart(*closing,false,true,0);
+    processFor(250);
+    require(closing->computerThinking(),"Close test did not leave an AI result pending");
+    closing.reset();
+    processFor(700);
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
     testRenderingAndCapture();
+    testSlidingAnimationAndInputLock();
+    testCastlingAnimations();
+    testCaptureAnimations();
+    testAIDelayAndAnimationCancellation();
     testComputerAndOrientation();
     testGameOver();
     testRepetitionAndReset();

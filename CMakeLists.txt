@@ -102,7 +102,7 @@ target_link_libraries(application_test PRIVATE chess_engine Qt6::Widgets Qt6::Gu
 add_test(NAME Application_Test COMMAND application_test)
 set_tests_properties(Application_Test PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-    TIMEOUT 30
+    TIMEOUT 45
 )
 
 # Keep normal developer builds compatible with Qt 6.3. Packaging uses Qt 6.5+.

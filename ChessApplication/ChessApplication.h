@@ -5,6 +5,7 @@
 #include <QGraphicsView>
 #include <QLabel>
 #include <QPushButton>
+#include <QParallelAnimationGroup>
 #include <QMainWindow>
 #include <QHBoxLayout>
 #include <atomic>
@@ -21,6 +22,7 @@ public:
     ~ChessApplication() override;
     const chess::Position& position() const { return game; }
     bool computerThinking() const { return thinking; }
+    bool moveAnimating() const { return moveAnimation != nullptr; }
     bool playerIsWhite() const { return humanWhite; }
 
 public slots:
@@ -46,11 +48,13 @@ private:
     std::map<std::string, int> repetitions;
     std::shared_ptr<std::atomic_bool> cancelled;
     unsigned generation = 0;
+    QParallelAnimationGroup* moveAnimation = nullptr;
 
     QPoint displaySquare(int row, int column) const;
     void startGame(chess::Position position);
     void newGame();
     void render();
     void applyMove(const chess::Move& move);
+    void stopMoveAnimation();
     void queueComputerMove();
 };
