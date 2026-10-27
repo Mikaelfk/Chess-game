@@ -1,6 +1,6 @@
 ﻿# CMakeList.txt : CMake project for Chess, include source and define
 # project specific logic here.
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.16)
 
 project("Chess")
 
@@ -36,7 +36,7 @@ add_library(backend
 )
 
 # Main executable
-add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
+qt_add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
 target_link_libraries(Chess PRIVATE backend Qt6::Widgets Qt6::Gui)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
@@ -101,3 +101,33 @@ set_tests_properties(Application_Test PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     TIMEOUT 30
 )
+
+# Keep normal developer builds compatible with Qt 6.3. Packaging uses Qt 6.5+.
+include(GNUInstallDirs)
+install(TARGETS Chess
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .
+)
+
+option(CHESS_DEPLOY_RUNTIME "Bundle Qt and compiler runtime dependencies on install" OFF)
+if(CHESS_DEPLOY_RUNTIME)
+    if(Qt6_VERSION VERSION_LESS 6.5)
+        message(FATAL_ERROR "Runtime packaging requires Qt 6.5 or newer")
+    endif()
+    if(UNIX AND NOT APPLE)
+        set_target_properties(Chess PROPERTIES INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+    endif()
+    if(MSVC)
+        # App-local DLLs let users run the package without installing build tools.
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${CMAKE_INSTALL_BINDIR})
+        include(InstallRequiredSystemLibraries)
+    endif()
+    # Include the platform used by the Windows package startup check.
+    qt_import_plugins(Chess INCLUDE Qt6::QOffscreenIntegrationPlugin)
+    qt_generate_deploy_app_script(
+        TARGET Chess
+        OUTPUT_SCRIPT deploy_script
+        NO_TRANSLATIONS
+    )
+    install(SCRIPT ${deploy_script})
+endif()
