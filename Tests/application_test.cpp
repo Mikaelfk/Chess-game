@@ -15,6 +15,7 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QPointer>
+#include <QProgressBar>
 #include <cstdlib>
 
 void require(bool condition, const char* message) {
@@ -745,6 +746,29 @@ void testReplay() {
         auto* progress=replay->findChild<QLabel*>("replayProgress");
         auto button=[&](const char* name){ return replay->findChild<QPushButton*>(name); };
         require(progress->text().contains("Move 0 of 4") && !button("replayPrevious")->isEnabled(),"Replay did not start at the beginning");
+        require(button("replayNext")->text().isEmpty() && !button("replayNext")->icon().isNull()
+                && button("replayNext")->accessibleName()=="Next","Replay navigation icons lack accessible labels");
+        auto clickReplay=[&](int row,int col) {
+            auto* v=replay->findChild<QGraphicsView*>();
+            const auto local=v->mapFromScene(squareCenter(white?row:7-row,white?col:7-col));
+            QMouseEvent event(QEvent::MouseButtonRelease,local,v->viewport()->mapToGlobal(local),Qt::LeftButton,Qt::NoButton,Qt::NoModifier);
+            QApplication::sendEvent(v->viewport(),&event);
+        };
+        clickReplay(6,4); clickReplay(3,4); // Illegal three-square pawn move.
+        require(!button("replayRestore")->isEnabled(),"Illegal analysis move started a variation");
+        clickReplay(6,4); clickReplay(4,4); processFor(260);
+        require(progress->text().contains("Analysis variation") && button("replayRestore")->isEnabled(),"Analysis move was not recorded separately");
+        clickReplay(1,3); clickReplay(3,3); processFor(260);
+        clickReplay(4,4); clickReplay(3,3); processFor(260);
+        auto* suggestion=replay->findChild<QLabel*>("replaySuggestion");
+        QElapsedTimer search; search.start();
+        while(!suggestion->property("ready").toBool() && search.elapsed()<6000) processFor(20);
+        require(suggestion->property("ready").toBool() && suggestion->text().contains("Suggested for Black"),"Engine suggestion is missing or stale after analysis moves");
+        auto* evaluation=replay->findChild<QProgressBar*>("replayEvaluation");
+        require(evaluation && evaluation->format().contains("engine"),"Engine evaluation was not displayed");
+        require(window.position().repetitionKey()==final,"Trying moves modified the recorded game");
+        button("replayRestore")->click();
+        require(progress->text().contains("Move 0 of 4") && !button("replayRestore")->isEnabled(),"Returning to the recorded game did not discard the variation");
         button("replayNext")->click(); processFor(260);
         require(progress->text().contains("White: f2"),"Replay move notation is incorrect");
         auto* scene=replay->findChild<QGraphicsView*>()->scene();
