@@ -1,6 +1,7 @@
 #include "ChessApplication.h"
 
 #include <QDialog>
+#include <QFrame>
 #include <QApplication>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -108,10 +109,22 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
 
     topCaptures = new QHBoxLayout();
     bottomCaptures = new QHBoxLayout();
+    topCaptures->setAlignment(Qt::AlignLeft);
+    bottomCaptures->setAlignment(Qt::AlignLeft);
     topPlayer = new QLabel(this);
     bottomPlayer = new QLabel(this);
+    topPlayer->setFixedHeight(30);
+    bottomPlayer->setFixedHeight(30);
     topCaptures->addWidget(topPlayer);
     bottomCaptures->addWidget(bottomPlayer);
+    for (auto* row : {topCaptures,bottomCaptures}) {
+        row->setSpacing(8);
+        auto* divider = new QFrame(this);
+        divider->setFrameShape(QFrame::VLine);
+        divider->setFrameShadow(QFrame::Plain);
+        divider->setFixedHeight(20);
+        row->addWidget(divider,0,Qt::AlignVCenter);
+    }
     ui.boardLayout->addLayout(topCaptures);
     ui.boardLayout->addWidget(&view, 0, Qt::AlignHCenter);
     ui.boardLayout->addLayout(bottomCaptures);
@@ -166,8 +179,7 @@ void ChessApplication::render() {
     resetDrag();
     for (auto* item : pieceItems) delete item;
     for (auto* item : overlays) delete item;
-    for (auto* label : captureLabels) delete label;
-    pieceItems.clear(); overlays.clear(); captureLabels.clear();
+    pieceItems.clear(); overlays.clear();
     if (selectedSquare) {
         const QPoint square = displaySquare(selectedSquare->y(),selectedSquare->x());
         auto* selection = scene.addRect(square.x()*62.5,square.y()*62.5,62.5,62.5,
@@ -203,16 +215,7 @@ void ChessApplication::render() {
         hint->setZValue(2);
         overlays.push_back(hint);
     }
-    auto captures = capturedPieces;
-    std::sort(captures.begin(),captures.end());
-    for (int piece : captures) {
-        auto* label = new QLabel(this);
-        label->setPixmap(piecePixmap(piece));
-        label->setFixedSize(30,30);
-        label->setScaledContents(true);
-        (chess::isWhite(piece) == humanWhite ? topCaptures : bottomCaptures)->addWidget(label);
-        captureLabels.push_back(label);
-    }
+    updateCaptureDisplay();
     const auto result = game.outcome();
     const bool repetition = repetitions[game.repetitionKey()] >= 3;
     gameOver = result != chess::Outcome::Playing || repetition;
@@ -229,6 +232,53 @@ void ChessApplication::render() {
         status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
     }
     boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
+}
+
+void ChessApplication::updateCaptureDisplay() {
+    // Count material still on the board so promotions are included as well.
+    const int values[] = {0,1,3,3,5,9,0};
+    int balance = 0;
+    for (const auto& row : game.squares) for (int piece : row)
+        if (piece) balance += (chess::isWhite(piece) ? 1 : -1)*values[chess::kind(piece)];
+    if (displayedBalance == balance && displayedCaptures == capturedPieces && displayedHumanWhite == humanWhite) return;
+    displayedBalance = balance;
+    displayedCaptures = capturedPieces;
+    displayedHumanWhite = humanWhite;
+    for (auto* widget : captureLabels) delete widget;
+    captureLabels.clear();
+    std::map<int,int> captures;
+    for (int piece : capturedPieces) ++captures[piece];
+    for (const auto& [piece,count] : captures) {
+        auto* group = new QWidget(this);
+        group->setObjectName(QString("capturedPiece%1").arg(piece));
+        auto* layout = new QHBoxLayout(group);
+        layout->setContentsMargins(0,0,0,0);
+        layout->setSpacing(0);
+        if (count > 1) {
+            auto* number = new QLabel(QString("%1x").arg(count),group);
+            number->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            layout->addWidget(number);
+        }
+        auto* icon = new QLabel(group);
+        icon->setPixmap(piecePixmap(piece));
+        icon->setFixedSize(30,30);
+        icon->setScaledContents(true);
+        layout->addWidget(icon);
+        group->setFixedSize(group->sizeHint());
+        (chess::isWhite(piece) == humanWhite ? topCaptures : bottomCaptures)->addWidget(group);
+        captureLabels.push_back(group);
+    }
+    if (balance != 0) {
+        const bool whiteLeads = balance > 0;
+        auto* advantage = new QLabel(QString("+%1").arg(std::abs(balance)),this);
+        advantage->setObjectName(whiteLeads ? "whiteMaterialAdvantage" : "blackMaterialAdvantage");
+        advantage->setToolTip("Material advantage: pawn 1, knight/bishop 3, rook 5, queen 9");
+        auto font = advantage->font();
+        font.setBold(true);
+        advantage->setFont(font);
+        (whiteLeads == humanWhite ? bottomCaptures : topCaptures)->addWidget(advantage);
+        captureLabels.push_back(advantage);
+    }
 }
 
 void ChessApplication::on_pushButtonClicked() {

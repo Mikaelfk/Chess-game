@@ -26,6 +26,10 @@ Moves slide smoothly between squares, including both pieces during castling.
 Captures disappear and promoted pawns change appearance when the move finishes.
 The computer pauses briefly before each move, even on Easy difficulty. Board
 input is locked during movement so turns cannot overlap.
+Captured pieces are grouped by type (for example, `5x` and one pawn icon).
+The side ahead in material shows a `+N` score: pawns count as 1, knights and
+bishops as 3, rooks as 5, and queens as 9. The score includes promotions;
+no advantage is shown when material is equal.
 
 The computer thinks in the background. You can start a new game while it is
 thinking; its old result will be discarded. Choose **Local two-player** to play

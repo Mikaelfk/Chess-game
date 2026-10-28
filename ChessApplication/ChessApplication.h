@@ -40,7 +40,10 @@ private:
     QComboBox *colourChoice, *difficultyChoice, *opponentChoice;
     QLabel *status, *topPlayer, *bottomPlayer;
     QHBoxLayout *topCaptures, *bottomCaptures;
-    std::vector<QLabel*> captureLabels;
+    std::vector<QWidget*> captureLabels;
+    std::vector<int> displayedCaptures;
+    std::optional<int> displayedBalance;
+    bool displayedHumanWhite = true;
     std::vector<int> capturedPieces;
     std::vector<QGraphicsItem*> overlays;
     std::vector<QGraphicsPixmapItem*> pieceItems;
@@ -67,6 +70,7 @@ private:
     void startGame(chess::Position position);
     void newGame();
     void render();
+    void updateCaptureDisplay();
     void applyMove(const chess::Move& move, std::optional<QPointF> dragStart = std::nullopt);
     void stopMoveAnimation();
     void queueComputerMove();

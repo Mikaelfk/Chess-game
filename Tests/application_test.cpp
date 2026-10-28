@@ -14,6 +14,7 @@
 #include <QVariantAnimation>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QPointer>
 #include <cstdlib>
 
 void require(bool condition, const char* message) {
@@ -627,8 +628,72 @@ void testSelectionHighlight() {
     requireSelection(window);
 }
 
+void testGroupedCapturesAndMaterial() {
+    chess::Position position;
+    position.squares[7][7]=chess::King;
+    position.squares[0][7]=chess::King+6;
+    position.squares[4][0]=chess::Rook;
+    for(int col=1;col<=5;++col) position.squares[4][col]=chess::Pawn+6;
+    ChessApplication window(nullptr,false,position);
+    window.show(); QApplication::processEvents();
+    require(!window.findChild<QLabel*>("whiteMaterialAdvantage") && !window.findChild<QLabel*>("blackMaterialAdvantage"),
+            "Equal material shows an advantage");
+    int kingCol=7;
+    int captureX=-1;
+    for(int col=1;col<=5;++col) {
+        clickSquare(window,4,col-1); clickSquare(window,4,col);
+        QApplication::processEvents(); // Let the capture row's layout settle after the animation.
+        auto* advantage=window.findChild<QLabel*>("whiteMaterialAdvantage");
+        require(advantage && advantage->text()==QString("+%1").arg(col),"Capture material balance is incorrect");
+        auto* group=window.findChild<QWidget*>("capturedPiece7");
+        require(group!=nullptr,"Captured pawn group missing");
+        if(captureX<0) captureX=group->x();
+        require(group->x()==captureX,"Changing the material lead moved the captured-piece row");
+        require(group->x()<window.width()/3,"Captured-piece row is not anchored beside the player label");
+        int icons=0; bool countFound=col==1;
+        for(auto* label:group->findChildren<QLabel*>()) {
+            if(!label->pixmap().isNull()) ++icons;
+            if(label->text()==QString("%1x").arg(col)) countFound=true;
+        }
+        require(icons==1 && countFound,"Captured pawns are not grouped with the correct count");
+        const QPointer<QWidget> retainedGroup(group);
+        const QPointer<QLabel> retainedAdvantage(advantage);
+        const QPoint groupPosition=group->pos();
+        clickSquare(window,0,kingCol);
+        require(retainedGroup && retainedAdvantage,"Selecting a piece recreated the capture display");
+        require(group->pos()==groupPosition,"Selecting a piece moved the capture display");
+        if(col<5) {
+            clickSquare(window,0,kingCol); clickSquare(window,0,kingCol==7 ? 6 : 7);
+            kingCol=kingCol==7 ? 6 : 7;
+        }
+    }
+    restart(window,true,false);
+    require(!window.findChild<QWidget*>("capturedPiece7") && !window.findChild<QLabel*>("whiteMaterialAdvantage"),
+            "New game retained capture counts or material advantage");
+
+    // Verify each piece value, including a lead belonging to Black.
+    const int values[]={0,1,3,3,5,9};
+    for(int piece=chess::Pawn;piece<=chess::Queen;++piece) {
+        auto p=chess::Position::initial();
+        bool removed=false;
+        for(auto& row:p.squares) for(auto& square:row) if(!removed && square==piece) { square=chess::Empty; removed=true; }
+        ChessApplication blackLead(nullptr,false,p);
+        auto* label=blackLead.findChild<QLabel*>("blackMaterialAdvantage");
+        require(label && label->text()==QString("+%1").arg(values[piece]),"Incorrect piece value for material advantage");
+    }
+    restart(window,false,false);
+    clickSquare(window,1,3); clickSquare(window,3,3); // e2-e4, rotated.
+    clickSquare(window,6,4); clickSquare(window,4,4); // d7-d5.
+    clickSquare(window,3,3); clickSquare(window,4,4); // e4xd5.
+    auto* whiteLead=window.findChild<QLabel*>("whiteMaterialAdvantage");
+    auto* captures=window.findChild<QWidget*>("capturedPiece7");
+    require(whiteLead && whiteLead->text()=="+1" && captures && whiteLead->geometry().center().y()<window.height()/2
+            && captures->geometry().center().y()<window.height()/2,"Rotated board assigns captures or advantage to the wrong player");
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testGroupedCapturesAndMaterial();
     testSelectionHighlight();
     testDragAndCaptureHints();
     testDragSpecialMoves();
