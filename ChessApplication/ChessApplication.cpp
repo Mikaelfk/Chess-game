@@ -38,6 +38,7 @@ QPixmap piecePixmap(int pieceType) {
 
 int choosePromotionPiece(QWidget* parent) {
     QDialog dialog(parent);
+    dialog.setObjectName("promotionDialog");
     dialog.setWindowTitle("Pawn Promotion");
     auto* layout = new QVBoxLayout(&dialog);
     const char* names[] = {"Queen", "Rook", "Bishop", "Knight"};
@@ -155,6 +156,8 @@ void ChessApplication::newGame() {
 }
 
 void ChessApplication::startGame(chess::Position position) {
+    if (resultDialog) resultDialog->close();
+    resultShown = false;
     if (cancelled) cancelled->store(true);
     ++generation;
     stopMoveAnimation();
@@ -232,6 +235,55 @@ void ChessApplication::render() {
         status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
     }
     boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
+    if (gameOver && !resultShown) {
+        resultShown = true;
+        const unsigned current = generation;
+        QTimer::singleShot(0,this,[this,current,result] {
+            if (current == generation && gameOver) showGameResult(result);
+        });
+    }
+}
+
+void ChessApplication::showGameResult(chess::Outcome result) {
+    auto* dialog = new QDialog(this);
+    resultDialog = dialog;
+    dialog->setObjectName("gameResultDialog");
+    dialog->setWindowTitle("Game over");
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setMinimumWidth(340);
+    auto* layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(28,24,28,24);
+    layout->setSpacing(16);
+    QString title = "Draw";
+    if (result == chess::Outcome::Checkmate) {
+        title = againstComputer ? (game.whiteToMove == humanWhite ? "Computer wins" : "You win!")
+                                : (game.whiteToMove ? "Black wins" : "White wins");
+    }
+    auto* heading = new QLabel(title,dialog);
+    heading->setObjectName("gameResultTitle");
+    heading->setAlignment(Qt::AlignCenter);
+    auto font = heading->font();
+    font.setPointSize(24);
+    font.setBold(true);
+    heading->setFont(font);
+    layout->addWidget(heading);
+    auto* detail = new QLabel(status->text(),dialog);
+    detail->setObjectName("gameResultDetail");
+    detail->setAlignment(Qt::AlignCenter);
+    detail->setWordWrap(true);
+    layout->addWidget(detail);
+    auto* buttons = new QHBoxLayout();
+    auto* review = new QPushButton("View board",dialog);
+    review->setObjectName("viewFinalBoard");
+    auto* again = new QPushButton("Play again",dialog);
+    again->setObjectName("playAgain");
+    again->setDefault(true);
+    buttons->addWidget(review);
+    buttons->addWidget(again);
+    layout->addLayout(buttons);
+    connect(review,&QPushButton::clicked,dialog,&QDialog::accept);
+    connect(again,&QPushButton::clicked,this,[this] { newGame(); });
+    dialog->open();
 }
 
 void ChessApplication::updateCaptureDisplay() {

@@ -36,6 +36,8 @@ thinking; its old result will be discarded. Choose **Local two-player** to play
 with another person instead. Pawn promotion offers all four choices. Checkmate,
 stalemate, insufficient material, threefold repetition and the fifty-move rule
 end the game and appear in the status bar.
+A game-over dialog also shows the winner or draw reason. Choose **Play again**
+to restart with the current settings, or **View board** to inspect the final position.
 
 The GUI and AI share a copyable `chess::Position` rules engine; search never
 modifies the displayed position. Rules, sliding-piece movement, AI behaviour,

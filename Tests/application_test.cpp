@@ -191,7 +191,7 @@ void testPromotion(bool white, int choice) {
     const char* names[] = {"Queen", "Rook", "Bishop", "Knight"};
     requirePieceImage(window, to, 0, QString(":/Images/%1 %2.png")
                       .arg(white ? "White" : "Black").arg(names[choice < 0 ? 0 : choice]));
-    require(window.findChildren<QDialog*>().empty(), "Promotion dialog was not destroyed");
+    require(!window.findChild<QDialog*>("promotionDialog"), "Promotion dialog was not destroyed");
 }
 
 void waitForComputer(ChessApplication& window) {
@@ -276,9 +276,16 @@ void testGameOver() {
     window.show(); QApplication::processEvents();
     require(!window.computerThinking(),"Computer started after stalemate");
     require(window.findChild<QLabel*>("gameStatus")->text().contains("stalemate"),"Stalemate status missing");
+    auto* dialog=window.findChild<QDialog*>("gameResultDialog");
+    require(dialog && dialog->isVisible(),"Stalemate end screen missing");
+    require(dialog->findChild<QLabel*>("gameResultTitle")->text()=="Draw","Wrong stalemate result title");
+    require(dialog->findChild<QLabel*>("gameResultDetail")->text().contains("stalemate"),"Draw reason missing");
+    dialog->findChild<QPushButton*>("viewFinalBoard")->click();
+    processFor(20);
     const auto before=window.position().repetitionKey();
     clickSquare(window,0,0); clickSquare(window,0,1);
     require(window.position().repetitionKey()==before,"Game accepted a move after stalemate");
+    require(!window.findChild<QDialog*>("gameResultDialog"),"Dismissed result screen reopened");
 }
 
 void testRepetitionAndReset() {
@@ -291,6 +298,8 @@ void testRepetitionAndReset() {
         clickSquare(window,2,5); clickSquare(window,0,6);
     }
     require(window.findChild<QLabel*>("gameStatus")->text().contains("threefold"),"Repetition draw missing");
+    QApplication::processEvents();
+    require(window.findChild<QLabel*>("gameResultDetail")->text().contains("threefold"),"Repetition end screen missing");
     restart(window,true,false);
     require(!window.findChild<QLabel*>("gameStatus")->text().contains("Draw"),"New game retained old draw");
     const auto before=window.position().repetitionKey();
@@ -691,8 +700,36 @@ void testGroupedCapturesAndMaterial() {
             && captures->geometry().center().y()<window.height()/2,"Rotated board assigns captures or advantage to the wrong player");
 }
 
+void testCheckmateEndScreen() {
+    ChessApplication window(nullptr,false);
+    window.show(); QApplication::processEvents();
+    for(auto move : {chess::Move{6,5,5,5},{1,4,3,4},{6,6,4,6}}) {
+        clickSquare(window,move.fromRow,move.fromCol); clickSquare(window,move.toRow,move.toCol);
+    }
+    clickSquare(window,0,3); clickSquare(window,4,7,false);
+    require(window.moveAnimating() && !window.findChild<QDialog*>("gameResultDialog"),"Result appeared before final move animation");
+    waitForAnimation(window); QApplication::processEvents();
+    auto* dialog=window.findChild<QDialog*>("gameResultDialog");
+    require(dialog && dialog->findChild<QLabel*>("gameResultTitle")->text()=="Black wins","Checkmate winner missing");
+    dialog->findChild<QPushButton*>("playAgain")->click();
+    processFor(20);
+    require(window.position().repetitionKey()==chess::Position::initial().repetitionKey(),"Play again did not reset the game");
+    require(!window.findChild<QDialog*>("gameResultDialog") && window.findChild<QComboBox*>("opponentChoice")->currentIndex()==1,
+            "Play again did not close the result or retain settings");
+
+    chess::Position mate;
+    mate.squares[0][0]=chess::King+6; mate.squares[2][2]=chess::King; mate.squares[1][1]=chess::Queen; mate.whiteToMove=false;
+    ChessApplication win(nullptr,true,mate);
+    win.show(); QApplication::processEvents();
+    require(win.findChild<QLabel*>("gameResultTitle")->text()=="You win!","Computer game winner text is incorrect");
+    restart(win,true,true);
+    processFor(20);
+    require(!win.findChild<QDialog*>("gameResultDialog"),"Restart left a stale result screen");
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testCheckmateEndScreen();
     testGroupedCapturesAndMaterial();
     testSelectionHighlight();
     testDragAndCaptureHints();
