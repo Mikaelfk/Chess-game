@@ -2,6 +2,7 @@ name: Build
 
 on:
   push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -28,7 +29,7 @@ jobs:
             generator: Ninja
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -69,21 +70,10 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run -a python .github/scripts/smoke-package.py out/package/Chess/bin/Chess --platform xcb
 
-      - name: Archive Windows package
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: Compress-Archive -Path out/package/Chess -DestinationPath out/Chess-Windows-x64.zip
-
-      - name: Archive Linux package
-        if: runner.os == 'Linux'
-        run: tar -C out/package -czf out/Chess-Linux-x64.tar.gz Chess
-
       - name: Upload executable package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Chess-${{ matrix.platform }}-x64
-          path: |
-            out/Chess-*.zip
-            out/Chess-*.tar.gz
+          path: out/package/
           if-no-files-found: error
           retention-days: 30
