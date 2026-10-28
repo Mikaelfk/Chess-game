@@ -62,6 +62,12 @@ jobs:
       - name: Package executable and runtime libraries
         run: cmake --install out/build/ci --config Release --prefix "${{ github.workspace }}/out/package/Chess"
 
+      - name: Remove duplicate Linux library aliases
+        if: runner.os == 'Linux'
+        run: |
+          python .github/scripts/test-deduplicate-linux-package.py
+          python .github/scripts/deduplicate-linux-package.py out/package/Chess
+
       - name: Smoke test packaged application (Windows)
         if: runner.os == 'Windows'
         run: python .github/scripts/smoke-package.py out/package/Chess/bin/Chess.exe
