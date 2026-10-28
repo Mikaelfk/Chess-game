@@ -587,8 +587,49 @@ void testDragSpecialMoves() {
     require(promote.position().squares[0][0]==chess::Knight,"Drag promotion failed");
 }
 
+void requireSelection(ChessApplication& window, int row = -1, int col = -1) {
+    int count = 0;
+    for (auto* item : boardScene(window)->items()) {
+        if (auto* rect = dynamic_cast<QGraphicsRectItem*>(item); rect && rect->zValue() == -0.5) {
+            ++count;
+            require(rect->rect() == QRectF(col*62.5,row*62.5,62.5,62.5),"Selection highlights the wrong square");
+            require(rect->brush().style() != Qt::NoBrush && rect->opacity() > 0,"Selection is not visible");
+        }
+    }
+    require(count == (row < 0 ? 0 : 1),"Unexpected number of selection highlights");
+}
+
+void testSelectionHighlight() {
+    ChessApplication window(nullptr,false);
+    window.show(); QApplication::processEvents();
+    requireSelection(window);
+    clickSquare(window,6,4);
+    requireSelection(window,6,4);
+    clickSquare(window,7,2); // A blocked bishop still has a selected square.
+    requireSelection(window,7,2);
+    clickSquare(window,4,2);
+    requireSelection(window);
+    clickSquare(window,1,4); // Opponent's piece cannot be selected.
+    requireSelection(window);
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(6,4));
+    boardMouse(window,QEvent::MouseMove,squareCenter(3,4));
+    requireSelection(window,6,4); // Highlight stays at the origin while dragging.
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(3,4));
+    requireSelection(window,6,4); // Illegal drop retains selection.
+    clickSquare(window,4,4,false);
+    requireSelection(window); // Clear as soon as a move starts.
+    waitForAnimation(window);
+    requireSelection(window);
+    restart(window,false,false);
+    clickSquare(window,1,3); // White e2 on the rotated board.
+    requireSelection(window,1,3);
+    restart(window,true,false);
+    requireSelection(window);
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testSelectionHighlight();
     testDragAndCaptureHints();
     testDragSpecialMoves();
     testRenderingAndCapture();

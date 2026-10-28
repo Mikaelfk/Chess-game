@@ -11,6 +11,7 @@ Choose **Your side** (White or Black), select **Easy**, **Medium**, or **Hard**,
 click **New game** to apply your choices. When you choose Black, the computer
 plays White's opening move and the board rotates so your pieces are at the bottom.
 Piece selection, move hints and check highlights follow that orientation.
+The selected piece's square is shaded gold, including while dragging.
 Click a piece to see its legal moves: filled dots mark quiet moves, and red rings
 mark captures (including en passant). Click a destination or drag the piece onto
 it. Illegal drops and drops outside the board return the piece to its square;

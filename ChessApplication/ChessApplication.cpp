@@ -151,6 +151,7 @@ void ChessApplication::startGame(chess::Position position) {
     againstComputer = opponentChoice->currentIndex() == 0;
     difficulty = static_cast<chess::Difficulty>(difficultyChoice->currentIndex());
     selectedMoves.clear();
+    selectedSquare.reset();
     capturedPieces.clear();
     repetitions.clear();
     repetitions[game.repetitionKey()] = 1;
@@ -167,6 +168,14 @@ void ChessApplication::render() {
     for (auto* item : overlays) delete item;
     for (auto* label : captureLabels) delete label;
     pieceItems.clear(); overlays.clear(); captureLabels.clear();
+    if (selectedSquare) {
+        const QPoint square = displaySquare(selectedSquare->y(),selectedSquare->x());
+        auto* selection = scene.addRect(square.x()*62.5,square.y()*62.5,62.5,62.5,
+                                       Qt::NoPen,QColor(246,196,65));
+        selection->setOpacity(0.7);
+        selection->setZValue(-0.5); // Above the board, beneath pieces and check warnings.
+        overlays.push_back(selection);
+    }
     for (int row = 0; row < 8; ++row) for (int col = 0; col < 8; ++col) {
         const int piece = game.squares[row][col];
         if (!piece) continue;
@@ -251,6 +260,9 @@ void ChessApplication::resetDrag() {
 
 void ChessApplication::selectSquare(QPoint square) {
     selectedMoves.clear();
+    selectedSquare.reset();
+    const int piece = game.squares[square.y()][square.x()];
+    if (piece && chess::isWhite(piece) == game.whiteToMove) selectedSquare = square;
     for (const auto& move : game.legalMoves())
         if (move.fromRow == square.y() && move.fromCol == square.x()) selectedMoves.push_back(move);
     render();
@@ -337,6 +349,7 @@ void ChessApplication::applyMove(const chess::Move& move, std::optional<QPointF>
     if (captured) capturedPieces.push_back(captured);
     ++repetitions[game.repetitionKey()];
     selectedMoves.clear();
+    selectedSquare.reset();
     for (auto* item : overlays) delete item;
     overlays.clear();
 

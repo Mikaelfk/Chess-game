@@ -49,6 +49,7 @@ private:
     chess::Difficulty difficulty = chess::Difficulty::Medium;
     bool humanWhite = true, againstComputer = true, thinking = false, gameOver = false;
     std::vector<chess::Move> selectedMoves;
+    std::optional<QPoint> selectedSquare;
     std::map<std::string, int> repetitions;
     std::shared_ptr<std::atomic_bool> cancelled;
     unsigned generation = 0;
