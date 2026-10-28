@@ -1,6 +1,9 @@
 #include "ChessApplication.h"
 
 #include <QDialog>
+#include <QApplication>
+#include <QMouseEvent>
+#include <QKeyEvent>
 #include <QFutureWatcher>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
@@ -11,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <set>
 
 namespace {
 constexpr int moveDurationMs = 220;
@@ -92,6 +96,8 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
     boardInput->setFlat(true);
     boardInput->setStyleSheet("QPushButton { background: transparent; border: 0px; }");
     boardInput->setFixedSize(500, 500);
+    boardInput->installEventFilter(this);
+    installEventFilter(this);
     auto* proxy = scene.addWidget(boardInput);
     proxy->setZValue(3);
     connect(boardInput, &QPushButton::released, this, &ChessApplication::on_pushButtonClicked);
@@ -156,6 +162,7 @@ void ChessApplication::startGame(chess::Position position) {
 }
 
 void ChessApplication::render() {
+    resetDrag();
     for (auto* item : pieceItems) delete item;
     for (auto* item : overlays) delete item;
     for (auto* label : captureLabels) delete label;
@@ -174,10 +181,16 @@ void ChessApplication::render() {
             overlays.push_back(warning);
         }
     }
+    std::set<std::pair<int,int>> hintedSquares;
     for (const auto& move : selectedMoves) {
+        if (!hintedSquares.emplace(move.toRow,move.toCol).second) continue;
         const QPoint square = displaySquare(move.toRow,move.toCol);
-        auto* hint = scene.addEllipse(square.x()*62.5+21,square.y()*62.5+21,20,20,Qt::NoPen,Qt::black);
-        hint->setOpacity(0.3);
+        const bool capture = game.squares[move.toRow][move.toCol] != chess::Empty
+            || (chess::kind(game.squares[move.fromRow][move.fromCol]) == chess::Pawn && move.fromCol != move.toCol);
+        auto* hint = capture
+            ? scene.addEllipse(square.x()*62.5+4,square.y()*62.5+4,54.5,54.5,QPen(QColor(160,35,35),4),Qt::NoBrush)
+            : scene.addEllipse(square.x()*62.5+21,square.y()*62.5+21,20,20,Qt::NoPen,Qt::black);
+        hint->setOpacity(capture ? 0.85 : 0.3);
         hint->setZValue(2);
         overlays.push_back(hint);
     }
@@ -210,11 +223,92 @@ void ChessApplication::render() {
 }
 
 void ChessApplication::on_pushButtonClicked() {
-    if (gameOver || thinking || moveAnimating() || (againstComputer && game.whiteToMove != humanWhite)) return;
-    const QPoint point = boardInput->mapFromGlobal(QCursor::pos());
-    if (point.x() < 0 || point.y() < 0 || point.x() >= 500 || point.y() >= 500) return;
-    const int col = humanWhite ? int(point.x()/62.5) : 7-int(point.x()/62.5);
-    const int row = humanWhite ? int(point.y()/62.5) : 7-int(point.y()/62.5);
+    if (!inputAllowed()) return;
+    const QPoint square = boardSquare(boardInput->mapFromGlobal(QCursor::pos()));
+    if (square.x() < 0) return;
+    if (!moveTo(square)) selectSquare(square);
+}
+
+bool ChessApplication::inputAllowed() const {
+    return !gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite);
+}
+
+QPoint ChessApplication::boardSquare(QPointF point) const {
+    if (point.x() < 0 || point.y() < 0 || point.x() >= 500 || point.y() >= 500) return {-1,-1};
+    const int col = int(point.x()/62.5), row = int(point.y()/62.5);
+    return humanWhite ? QPoint(col,row) : QPoint(7-col,7-row);
+}
+
+void ChessApplication::resetDrag() {
+    if (draggedPiece) {
+        draggedPiece->setPos(dragOrigin);
+        draggedPiece->setZValue(0);
+    }
+    draggedPiece = nullptr;
+    boardPressed = dragging = false;
+    boardInput->unsetCursor();
+}
+
+void ChessApplication::selectSquare(QPoint square) {
+    selectedMoves.clear();
+    for (const auto& move : game.legalMoves())
+        if (move.fromRow == square.y() && move.fromCol == square.x()) selectedMoves.push_back(move);
+    render();
+}
+
+bool ChessApplication::eventFilter(QObject* watched, QEvent* event) {
+    if ((event->type() == QEvent::WindowDeactivate)
+        || (event->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape)) {
+        resetDrag();
+    }
+    if (watched != boardInput) return QMainWindow::eventFilter(watched,event);
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto* mouse = static_cast<QMouseEvent*>(event);
+        if (mouse->button() != Qt::LeftButton) return true;
+        resetDrag();
+        if (!inputAllowed()) return true;
+        const QPoint square = boardSquare(mouse->position());
+        if (square.x() < 0) return true;
+        const int piece = game.squares[square.y()][square.x()];
+        if (piece && chess::isWhite(piece) == game.whiteToMove) {
+            selectSquare(square);
+            const QPoint displayed = displaySquare(square.y(),square.x());
+            dragOrigin = QPointF(displayed.x()*62.5,displayed.y()*62.5);
+            for (auto* item : pieceItems) if (item->pos() == dragOrigin) draggedPiece = item;
+            dragOffset = mouse->position()-dragOrigin;
+        }
+        pressPosition = mouse->position();
+        boardPressed = true;
+        mouse->accept();
+        return true;
+    }
+    if (event->type() == QEvent::MouseMove && boardPressed) {
+        auto* mouse = static_cast<QMouseEvent*>(event);
+        if (draggedPiece && (mouse->position()-pressPosition).manhattanLength() >= QApplication::startDragDistance()) dragging = true;
+        if (dragging) {
+            draggedPiece->setZValue(4);
+            draggedPiece->setPos(mouse->position()-dragOffset);
+            boardInput->setCursor(Qt::ClosedHandCursor);
+        }
+        return true;
+    }
+    if (event->type() == QEvent::MouseButtonRelease) {
+        auto* mouse = static_cast<QMouseEvent*>(event);
+        if (mouse->button() != Qt::LeftButton || !boardPressed) return true;
+        const bool wasDragging = dragging;
+        const auto start = dragging ? std::optional<QPointF>(draggedPiece->pos()) : std::nullopt;
+        const QPoint square = boardSquare(mouse->position());
+        resetDrag();
+        if (!inputAllowed()) return true;
+        if (square.x() >= 0 && moveTo(square,start)) return true;
+        if (!wasDragging && square.x() >= 0) selectSquare(square);
+        return true;
+    }
+    return QMainWindow::eventFilter(watched,event);
+}
+
+bool ChessApplication::moveTo(QPoint square, std::optional<QPointF> dragStart) {
+    const int row = square.y(), col = square.x();
     const auto found = std::find_if(selectedMoves.begin(),selectedMoves.end(),[&](const chess::Move& move) {
         return move.toRow == row && move.toCol == col;
     });
@@ -224,17 +318,15 @@ void ChessApplication::on_pushButtonClicked() {
             const unsigned current = generation;
             const int choices[] = {chess::Queen,chess::Rook,chess::Bishop,chess::Knight};
             move.promotion = choices[choosePromotionPiece(this)];
-            if (current != generation) return;
+            if (current != generation) return true;
         }
-        applyMove(move);
-        return;
+        applyMove(move,dragStart);
+        return true;
     }
-    selectedMoves.clear();
-    for (const auto& move : game.legalMoves()) if (move.fromRow == row && move.fromCol == col) selectedMoves.push_back(move);
-    render();
+    return false;
 }
 
-void ChessApplication::applyMove(const chess::Move& move) {
+void ChessApplication::applyMove(const chess::Move& move, std::optional<QPointF> dragStart) {
     if (moveAnimating()) return;
     const int piece = game.squares[move.fromRow][move.fromCol];
     int captured = game.squares[move.toRow][move.toCol];
@@ -258,6 +350,7 @@ void ChessApplication::applyMove(const chess::Move& move) {
         const QPoint to = displaySquare(toRow,toCol);
         for (auto* item : pieceItems) {
             if (item->pos() != QPointF(from.x()*62.5,from.y()*62.5)) continue;
+            if (dragStart && fromRow == move.fromRow && fromCol == move.fromCol) item->setPos(*dragStart);
             item->setZValue(2); // Slide above stationary pieces during captures.
             auto* motion = new QVariantAnimation();
             motion->setDuration(moveDurationMs);

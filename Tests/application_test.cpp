@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QParallelAnimationGroup>
 #include <QVariantAnimation>
+#include <QMouseEvent>
+#include <QKeyEvent>
 #include <cstdlib>
 
 void require(bool condition, const char* message) {
@@ -456,8 +458,139 @@ void testAIDelayAndAnimationCancellation() {
     processFor(700);
 }
 
+void boardMouse(ChessApplication& window, QEvent::Type type, QPointF scenePoint) {
+    auto* view = window.findChildren<QGraphicsView*>().front();
+    const QPoint local = view->mapFromScene(scenePoint);
+    const QPoint global = view->viewport()->mapToGlobal(local);
+    QMouseEvent event(type,local,global,
+        type == QEvent::MouseMove ? Qt::NoButton : Qt::LeftButton,
+        type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton,Qt::NoModifier);
+    QApplication::sendEvent(view->viewport(),&event);
+    QApplication::processEvents();
+}
+
+QPointF squareCenter(int row, int col) { return {col*62.5+31,row*62.5+31}; }
+
+void dragSquare(ChessApplication& window, int fromRow, int fromCol, int toRow, int toCol) {
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(fromRow,fromCol));
+    boardMouse(window,QEvent::MouseMove,squareCenter(toRow,toCol));
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(toRow,toCol));
+    waitForAnimation(window);
+}
+
+void testDragAndCaptureHints() {
+    ChessApplication window(nullptr,false);
+    window.show(); QApplication::processEvents();
+    const auto initial = window.position().repetitionKey();
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(6,4));
+    boardMouse(window,QEvent::MouseMove,squareCenter(4,4));
+    bool follows = false;
+    for (auto* item : boardScene(window)->items())
+        if (item->zValue() == 4 && item->pos() == QPointF(250,250)) follows = true;
+    require(follows,"Dragged piece does not follow the pointer");
+    require(window.position().repetitionKey() == initial,"Dragging changed the game before release");
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(4,4));
+    waitForAnimation(window);
+    require(window.position().squares[4][4] == chess::Pawn,"Drag did not play e2-e4");
+    dragSquare(window,1,3,3,3);
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(4,4));
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(4,4));
+    int rings=0,dots=0;
+    for (auto* item : boardScene(window)->items()) if(auto* hint=dynamic_cast<QGraphicsEllipseItem*>(item)) {
+        if(hint->brush().style() == Qt::NoBrush) {
+            ++rings;
+            require(hint->rect().center() == squareCenter(3,3)+QPointF(.25,.25),"Capture ring is on the wrong square");
+        } else ++dots;
+    }
+    require(rings==1 && dots==1,"Capture and quiet move hints are not distinct");
+    const auto before = window.position().repetitionKey();
+    dragSquare(window,4,4,2,4);
+    require(window.position().repetitionKey()==before,"Illegal drop changed the position");
+    requirePieceImage(window,4,4,":/Images/White Pawn.png");
+    dragSquare(window,4,4,-1,4);
+    require(window.position().repetitionKey()==before,"Off-board drop changed the position");
+    requirePieceImage(window,4,4,":/Images/White Pawn.png");
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(4,4));
+    boardMouse(window,QEvent::MouseMove,squareCenter(3,3));
+    QKeyEvent escape(QEvent::KeyPress,Qt::Key_Escape,Qt::NoModifier);
+    QApplication::sendEvent(&window,&escape);
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(3,3));
+    require(window.position().repetitionKey()==before,"Escape did not cancel the drag");
+    requirePieceImage(window,4,4,":/Images/White Pawn.png");
+    dragSquare(window,4,4,3,3);
+    require(window.position().squares[3][3]==chess::Pawn,"Drag capture failed");
+
+    restart(window,false,false);
+    dragSquare(window,1,3,3,3); // White e2-e4 on the rotated board.
+    dragSquare(window,6,3,4,3); // Black e7-e5.
+    require(window.position().squares[4][4]==chess::Pawn && window.position().squares[3][4]==chess::Pawn+6,
+            "Drag coordinates did not follow Black's orientation");
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(1,0));
+    boardMouse(window,QEvent::MouseMove,squareCenter(2,0));
+    restart(window,true,false);
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(2,0));
+    require(window.position().repetitionKey()==initial,"Release after restart moved a stale piece");
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(6,4));
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(6,4));
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(4,4));
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(4,4));
+    require(window.moveAnimating(),"Mouse click-to-move stopped working");
+    const auto moving = window.position().repetitionKey();
+    boardMouse(window,QEvent::MouseButtonPress,squareCenter(1,3));
+    boardMouse(window,QEvent::MouseMove,squareCenter(3,3));
+    boardMouse(window,QEvent::MouseButtonRelease,squareCenter(3,3));
+    require(window.position().repetitionKey()==moving,"Drag input was accepted during an animation");
+    waitForAnimation(window);
+}
+
+void testDragSpecialMoves() {
+    chess::Position castle;
+    castle.squares[7][4]=chess::King; castle.squares[7][7]=chess::Rook;
+    castle.squares[0][4]=chess::King+6; castle.castling[0]=true;
+    ChessApplication window(nullptr,false,castle);
+    window.show(); QApplication::processEvents();
+    dragSquare(window,7,4,7,6);
+    require(window.position().squares[7][6]==chess::King && window.position().squares[7][5]==chess::Rook,
+            "Drag castling failed");
+
+    chess::Position ep=chess::Position::initial();
+    for(auto move : {chess::Move{6,4,4,4},{1,0,2,0},{4,4,3,4},{1,3,3,3}}) require(ep.play(move),"En passant setup failed");
+    ChessApplication enPassant(nullptr,false,ep);
+    enPassant.show(); QApplication::processEvents();
+    clickSquare(enPassant,3,4);
+    int epRings=0;
+    for(auto* item:boardScene(enPassant)->items()) if(auto* hint=dynamic_cast<QGraphicsEllipseItem*>(item))
+        if(hint->brush().style()==Qt::NoBrush) ++epRings;
+    require(epRings==1,"En passant destination is not marked as a capture");
+    dragSquare(enPassant,3,4,2,3);
+    require(enPassant.position().squares[2][3]==chess::Pawn && enPassant.position().squares[3][3]==chess::Empty,
+            "Drag en passant failed");
+
+    chess::Position promotion;
+    promotion.squares[7][7]=chess::King; promotion.squares[0][7]=chess::King+6;
+    promotion.squares[1][0]=chess::Pawn;
+    ChessApplication promote(nullptr,false,promotion);
+    promote.show(); QApplication::processEvents();
+    boardMouse(promote,QEvent::MouseButtonPress,squareCenter(1,0));
+    int promotionHints=0;
+    for(auto* item:boardScene(promote)->items()) if(dynamic_cast<QGraphicsEllipseItem*>(item)) ++promotionHints;
+    require(promotionHints==1,"Promotion choices duplicate the destination hint");
+    boardMouse(promote,QEvent::MouseMove,squareCenter(0,0));
+    QTimer::singleShot(0,[]{
+        auto* dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget());
+        require(dialog!=nullptr,"Drag promotion dialog missing");
+        for(auto* button:dialog->findChildren<QPushButton*>()) if(button->text()=="Knight") { button->click(); return; }
+        require(false,"Knight promotion choice missing");
+    });
+    boardMouse(promote,QEvent::MouseButtonRelease,squareCenter(0,0));
+    waitForAnimation(promote);
+    require(promote.position().squares[0][0]==chess::Knight,"Drag promotion failed");
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testDragAndCaptureHints();
+    testDragSpecialMoves();
     testRenderingAndCapture();
     testSlidingAnimationAndInputLock();
     testCastlingAnimations();
