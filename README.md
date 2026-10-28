@@ -38,6 +38,10 @@ stalemate, insufficient material, threefold repetition and the fifty-move rule
 end the game and appear in the status bar.
 A game-over dialog also shows the winner or draw reason. Choose **Play again**
 to restart with the current settings, or **View board** to inspect the final position.
+Choose **Replay game** in the result dialog or on the finished board to review
+the game. Step through moves with **First**, **Previous**, **Next**, and **Last**,
+or use **Play/Pause** for automatic playback. Replay preserves board orientation
+and never changes the finished game. Starting a new game clears its replay.
 
 The GUI and AI share a copyable `chess::Position` rules engine; search never
 modifies the displayed position. Rules, sliding-piece movement, AI behaviour,

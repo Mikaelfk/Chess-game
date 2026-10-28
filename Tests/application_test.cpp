@@ -727,8 +727,54 @@ void testCheckmateEndScreen() {
     require(!win.findChild<QDialog*>("gameResultDialog"),"Restart left a stale result screen");
 }
 
+void testReplay() {
+    for(bool white : {true,false}) {
+        ChessApplication window(nullptr,false);
+        window.show(); QApplication::processEvents();
+        restart(window,white,false);
+        for(auto m : {chess::Move{6,5,5,5},{1,4,3,4},{6,6,4,6},{0,3,4,7}}) {
+            clickSquare(window,white?m.fromRow:7-m.fromRow,white?m.fromCol:7-m.fromCol);
+            clickSquare(window,white?m.toRow:7-m.toRow,white?m.toCol:7-m.toCol);
+        }
+        QApplication::processEvents();
+        const auto final=window.position().repetitionKey();
+        window.findChild<QPushButton*>("replayResult")->click();
+        processFor(20);
+        auto* replay=window.findChild<QDialog*>("gameReplayDialog");
+        require(replay && replay->isVisible(),"Replay did not open from the result screen");
+        auto* progress=replay->findChild<QLabel*>("replayProgress");
+        auto button=[&](const char* name){ return replay->findChild<QPushButton*>(name); };
+        require(progress->text().contains("Move 0 of 4") && !button("replayPrevious")->isEnabled(),"Replay did not start at the beginning");
+        button("replayNext")->click(); processFor(260);
+        require(progress->text().contains("White: f2"),"Replay move notation is incorrect");
+        auto* scene=replay->findChild<QGraphicsView*>()->scene();
+        bool pawnFound=false;
+        const QPointF expected=white ? QPointF(5*62.5,5*62.5) : QPointF(2*62.5,2*62.5);
+        for(auto* item:scene->items()) if(auto* piece=dynamic_cast<QGraphicsPixmapItem*>(item))
+            if(piece->pos()==expected && piece->pixmap().toImage()==QPixmap(":/Images/White Pawn.png").toImage()) pawnFound=true;
+        require(pawnFound,"Replay piece position or orientation is wrong");
+        button("replayPrevious")->click();
+        require(progress->text().contains("Move 0 of 4"),"Replay previous failed");
+        button("replayLast")->click();
+        require(progress->text().contains("Move 4 of 4") && !button("replayNext")->isEnabled(),"Replay last failed");
+        button("replayPrevious")->click(); button("replayPlay")->click(); processFor(260);
+        require(progress->text().contains("Move 4 of 4") && button("replayPlay")->text()=="Play","Autoplay did not stop at the end");
+        button("replayFirst")->click(); button("replayPlay")->click(); button("replayPlay")->click();
+        processFor(950);
+        require(progress->text().contains("Move 1 of 4"),"Paused replay continued playing");
+        require(window.position().repetitionKey()==final && !window.computerThinking(),"Replay modified the finished game");
+        replay->close(); processFor(20);
+        window.findChild<QPushButton*>("replayGame")->click(); processFor(20);
+        require(window.findChild<QDialog*>("gameReplayDialog"),"Replay could not reopen from the board");
+        restart(window,white,false); processFor(20);
+        require(!window.findChild<QDialog*>("gameReplayDialog") && !window.findChild<QPushButton*>("replayGame")->isVisible(),
+                "New game retained the old replay");
+    }
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testReplay();
     testCheckmateEndScreen();
     testGroupedCapturesAndMaterial();
     testSelectionHighlight();
