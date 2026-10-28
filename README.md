@@ -57,16 +57,16 @@ this workflow is on the default branch.
 
 Open a successful run and download **Chess-Windows-x64** or **Chess-Linux-x64**
 from **Artifacts** (GitHub sign-in is required). Artifacts are retained for 30 days.
-Extract the downloaded artifact, then extract the archive inside it:
+Extract the downloaded ZIP once:
 
 - **Windows 11:** extract `Chess-Windows-x64.zip` and open `Chess/bin/Chess.exe`.
   Keep the entire `Chess` folder together: Qt plugins, DLLs and configuration
   files are included. No compiler or Qt installation is needed. Builds are unsigned;
   Windows Smart App Control may block them.
-- **Linux:** extract `Chess-Linux-x64.tar.gz` and run `./Chess/bin/Chess` from a
-  graphical desktop. The tar archive preserves executable permissions and library
-  symlinks. Qt libraries/plugins are bundled; system graphics libraries are still
-  required. The build targets Ubuntu 22.04 or compatible newer distributions,
+- **Linux:** extract `Chess-Linux-x64.zip`, then run `chmod +x Chess/bin/Chess`
+  and `./Chess/bin/Chess` from a graphical desktop. GitHub artifact ZIPs do not
+  preserve executable permissions. Qt libraries/plugins are bundled; system
+  graphics libraries are still required. The build targets Ubuntu 22.04 or compatible newer distributions,
   not every Linux distribution.
 
 CI uses Qt 6.8.3, MSVC on Windows, and GCC on Linux. To create a runtime package
