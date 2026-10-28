@@ -1,6 +1,7 @@
 #include "ChessApplication.h"
 
 #include <QDialog>
+#include <QFrame>
 #include <QApplication>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -116,6 +117,14 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
     bottomPlayer->setFixedHeight(30);
     topCaptures->addWidget(topPlayer);
     bottomCaptures->addWidget(bottomPlayer);
+    for (auto* row : {topCaptures,bottomCaptures}) {
+        row->setSpacing(8);
+        auto* divider = new QFrame(this);
+        divider->setFrameShape(QFrame::VLine);
+        divider->setFrameShadow(QFrame::Plain);
+        divider->setFixedHeight(20);
+        row->addWidget(divider,0,Qt::AlignVCenter);
+    }
     ui.boardLayout->addLayout(topCaptures);
     ui.boardLayout->addWidget(&view, 0, Qt::AlignHCenter);
     ui.boardLayout->addLayout(bottomCaptures);
@@ -244,9 +253,10 @@ void ChessApplication::updateCaptureDisplay() {
         group->setObjectName(QString("capturedPiece%1").arg(piece));
         auto* layout = new QHBoxLayout(group);
         layout->setContentsMargins(0,0,0,0);
-        layout->setSpacing(3);
+        layout->setSpacing(0);
         if (count > 1) {
             auto* number = new QLabel(QString("%1x").arg(count),group);
+            number->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
             layout->addWidget(number);
         }
         auto* icon = new QLabel(group);
