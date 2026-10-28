@@ -40,7 +40,7 @@ private:
     QComboBox *colourChoice, *difficultyChoice, *opponentChoice;
     QLabel *status, *topPlayer, *bottomPlayer;
     QHBoxLayout *topCaptures, *bottomCaptures;
-    std::vector<QLabel*> captureLabels;
+    std::vector<QWidget*> captureLabels;
     std::vector<int> capturedPieces;
     std::vector<QGraphicsItem*> overlays;
     std::vector<QGraphicsPixmapItem*> pieceItems;
