@@ -29,8 +29,8 @@ stalemate, insufficient material, threefold repetition and the fifty-move rule
 end the game and appear in the status bar.
 
 The GUI and AI share a copyable `chess::Position` rules engine; search never
-modifies the displayed position. The older `Board`/piece API remains covered by
-its existing tests for compatibility, but is not used by the application.
+modifies the displayed position. Rules, sliding-piece movement, AI behaviour,
+and the application are tested against that same engine.
 
 ## How to run the application
 

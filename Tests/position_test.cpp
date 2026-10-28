@@ -40,7 +40,50 @@ Position fromFen(const std::string& fen) {
 }
 
 bool has(const Position& p, Move m) { const auto moves = p.legalMoves(); return std::find(moves.begin(), moves.end(), m) != moves.end(); }
+void testInitialPositionAndMoves() {
+    Position p = Position::initial();
+    const int backRank[] = {Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook};
+    for (int col = 0; col < 8; ++col) {
+        require(p.squares[0][col] == backRank[col] + 6 && p.squares[1][col] == Pawn + 6,
+                "Black starting pieces are incorrect");
+        require(p.squares[6][col] == Pawn && p.squares[7][col] == backRank[col],
+                "White starting pieces are incorrect");
+        for (int row = 2; row < 6; ++row) require(p.squares[row][col] == Empty, "Starting middle ranks are not empty");
+    }
+    require(p.whiteToMove && std::all_of(p.castling.begin(), p.castling.end(), [](bool right) { return right; }),
+            "Starting turn or castling rights are incorrect");
+    require(p.enPassantRow == -1 && p.enPassantCol == -1 && p.halfmoveClock == 0,
+            "Starting move counters are incorrect");
+    require(!p.inCheck(true) && !p.inCheck(false) && p.outcome() == Outcome::Playing,
+            "Initial position is not a playable game");
+    require(p.play({6,4,4,4}), "White pawn could not make its opening double step");
+    require(p.squares[6][4] == Empty && p.squares[4][4] == Pawn && !p.whiteToMove,
+            "Opening move did not update board and turn");
+    require(p.enPassantRow == 5 && p.enPassantCol == 4, "Double step did not set the en-passant square");
+    const Position before = p;
+    for (Move rejected : {Move{4,4,3,4}, {1,0,4,0}, {0,0,3,0}, {1,0,-1,0}, {-1,0,2,0}}) {
+        require(!p.play(rejected), "Illegal move was accepted");
+        require(p.squares == before.squares && p.whiteToMove == before.whiteToMove && p.castling == before.castling
+                && p.enPassantRow == before.enPassantRow && p.enPassantCol == before.enPassantCol
+                && p.halfmoveClock == before.halfmoveClock, "Rejected move modified game state");
+    }
+}
+
+void testCheckAndBlockingMove() {
+    Position p = Position::initial();
+    for (Move move : {Move{6,4,4,4}, {1,5,3,5}, {7,3,3,7}}) {
+        require(p.play(move), "Check setup move was rejected");
+    }
+    require(p.inCheck(false) && !p.inCheck(true) && p.outcome() == Outcome::Playing,
+            "Queen check was not detected correctly");
+    require(!p.play({1,0,2,0}), "A player ignored check");
+    require(p.play({1,6,2,6}), "Blocking check was rejected");
+    require(!p.inCheck(false) && !p.inCheck(true), "Blocking move did not remove check");
+}
+
 int main() {
+    testInitialPositionAndMoves();
+    testCheckAndBlockingMove();
     Position p = Position::initial();
     require(perft(p,1)==20 && perft(p,2)==400 && perft(p,3)==8902, "Initial position move counts differ from standard chess");
     // Published perft positions cover castling, pins and en-passant interactions.
