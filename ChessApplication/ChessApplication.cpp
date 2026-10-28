@@ -108,8 +108,12 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
 
     topCaptures = new QHBoxLayout();
     bottomCaptures = new QHBoxLayout();
+    topCaptures->setAlignment(Qt::AlignLeft);
+    bottomCaptures->setAlignment(Qt::AlignLeft);
     topPlayer = new QLabel(this);
     bottomPlayer = new QLabel(this);
+    topPlayer->setFixedHeight(30);
+    bottomPlayer->setFixedHeight(30);
     topCaptures->addWidget(topPlayer);
     bottomCaptures->addWidget(bottomPlayer);
     ui.boardLayout->addLayout(topCaptures);
@@ -166,8 +170,7 @@ void ChessApplication::render() {
     resetDrag();
     for (auto* item : pieceItems) delete item;
     for (auto* item : overlays) delete item;
-    for (auto* label : captureLabels) delete label;
-    pieceItems.clear(); overlays.clear(); captureLabels.clear();
+    pieceItems.clear(); overlays.clear();
     if (selectedSquare) {
         const QPoint square = displaySquare(selectedSquare->y(),selectedSquare->x());
         auto* selection = scene.addRect(square.x()*62.5,square.y()*62.5,62.5,62.5,
@@ -203,6 +206,37 @@ void ChessApplication::render() {
         hint->setZValue(2);
         overlays.push_back(hint);
     }
+    updateCaptureDisplay();
+    const auto result = game.outcome();
+    const bool repetition = repetitions[game.repetitionKey()] >= 3;
+    gameOver = result != chess::Outcome::Playing || repetition;
+    if (result == chess::Outcome::Checkmate) {
+        if (againstComputer) status->setText(game.whiteToMove == humanWhite ? "Checkmate - Computer wins." : "Checkmate - You win!");
+        else status->setText(game.whiteToMove ? "Checkmate - Black wins." : "Checkmate - White wins.");
+    } else if (result == chess::Outcome::Stalemate) status->setText("Draw - stalemate.");
+    else if (result == chess::Outcome::FiftyMoveDraw) status->setText("Draw - fifty-move rule.");
+    else if (result == chess::Outcome::InsufficientMaterial) status->setText("Draw - insufficient material.");
+    else if (repetition) status->setText("Draw - threefold repetition.");
+    else if (thinking) status->setText("Computer is thinking...");
+    else {
+        const QString turn = againstComputer ? "Your turn" : (game.whiteToMove ? "White to move" : "Black to move");
+        status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
+    }
+    boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
+}
+
+void ChessApplication::updateCaptureDisplay() {
+    // Count material still on the board so promotions are included as well.
+    const int values[] = {0,1,3,3,5,9,0};
+    int balance = 0;
+    for (const auto& row : game.squares) for (int piece : row)
+        if (piece) balance += (chess::isWhite(piece) ? 1 : -1)*values[chess::kind(piece)];
+    if (displayedBalance == balance && displayedCaptures == capturedPieces && displayedHumanWhite == humanWhite) return;
+    displayedBalance = balance;
+    displayedCaptures = capturedPieces;
+    displayedHumanWhite = humanWhite;
+    for (auto* widget : captureLabels) delete widget;
+    captureLabels.clear();
     std::map<int,int> captures;
     for (int piece : capturedPieces) ++captures[piece];
     for (const auto& [piece,count] : captures) {
@@ -224,11 +258,6 @@ void ChessApplication::render() {
         (chess::isWhite(piece) == humanWhite ? topCaptures : bottomCaptures)->addWidget(group);
         captureLabels.push_back(group);
     }
-    // Count material still on the board so promotions are included as well.
-    const int values[] = {0,1,3,3,5,9,0};
-    int balance = 0;
-    for (const auto& row : game.squares) for (int piece : row)
-        if (piece) balance += (chess::isWhite(piece) ? 1 : -1)*values[chess::kind(piece)];
     if (balance != 0) {
         const bool whiteLeads = balance > 0;
         auto* advantage = new QLabel(QString("+%1").arg(std::abs(balance)),this);
@@ -240,22 +269,6 @@ void ChessApplication::render() {
         (whiteLeads == humanWhite ? bottomCaptures : topCaptures)->addWidget(advantage);
         captureLabels.push_back(advantage);
     }
-    const auto result = game.outcome();
-    const bool repetition = repetitions[game.repetitionKey()] >= 3;
-    gameOver = result != chess::Outcome::Playing || repetition;
-    if (result == chess::Outcome::Checkmate) {
-        if (againstComputer) status->setText(game.whiteToMove == humanWhite ? "Checkmate - Computer wins." : "Checkmate - You win!");
-        else status->setText(game.whiteToMove ? "Checkmate - Black wins." : "Checkmate - White wins.");
-    } else if (result == chess::Outcome::Stalemate) status->setText("Draw - stalemate.");
-    else if (result == chess::Outcome::FiftyMoveDraw) status->setText("Draw - fifty-move rule.");
-    else if (result == chess::Outcome::InsufficientMaterial) status->setText("Draw - insufficient material.");
-    else if (repetition) status->setText("Draw - threefold repetition.");
-    else if (thinking) status->setText("Computer is thinking...");
-    else {
-        const QString turn = againstComputer ? "Your turn" : (game.whiteToMove ? "White to move" : "Black to move");
-        status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
-    }
-    boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
 }
 
 void ChessApplication::on_pushButtonClicked() {

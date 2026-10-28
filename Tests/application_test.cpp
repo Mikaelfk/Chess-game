@@ -14,6 +14,7 @@
 #include <QVariantAnimation>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QPointer>
 #include <cstdlib>
 
 void require(bool condition, const char* message) {
@@ -638,18 +639,29 @@ void testGroupedCapturesAndMaterial() {
     require(!window.findChild<QLabel*>("whiteMaterialAdvantage") && !window.findChild<QLabel*>("blackMaterialAdvantage"),
             "Equal material shows an advantage");
     int kingCol=7;
+    int captureX=-1;
     for(int col=1;col<=5;++col) {
         clickSquare(window,4,col-1); clickSquare(window,4,col);
+        QApplication::processEvents(); // Let the capture row's layout settle after the animation.
         auto* advantage=window.findChild<QLabel*>("whiteMaterialAdvantage");
         require(advantage && advantage->text()==QString("+%1").arg(col),"Capture material balance is incorrect");
         auto* group=window.findChild<QWidget*>("capturedPiece7");
         require(group!=nullptr,"Captured pawn group missing");
+        if(captureX<0) captureX=group->x();
+        require(group->x()==captureX,"Changing the material lead moved the captured-piece row");
+        require(group->x()<window.width()/3,"Captured-piece row is not anchored beside the player label");
         int icons=0; bool countFound=col==1;
         for(auto* label:group->findChildren<QLabel*>()) {
             if(!label->pixmap().isNull()) ++icons;
             if(label->text()==QString("%1x").arg(col)) countFound=true;
         }
         require(icons==1 && countFound,"Captured pawns are not grouped with the correct count");
+        const QPointer<QWidget> retainedGroup(group);
+        const QPointer<QLabel> retainedAdvantage(advantage);
+        const QPoint groupPosition=group->pos();
+        clickSquare(window,0,kingCol);
+        require(retainedGroup && retainedAdvantage,"Selecting a piece recreated the capture display");
+        require(group->pos()==groupPosition,"Selecting a piece moved the capture display");
         if(col<5) {
             clickSquare(window,0,kingCol); clickSquare(window,0,kingCol==7 ? 6 : 7);
             kingCol=kingCol==7 ? 6 : 7;
