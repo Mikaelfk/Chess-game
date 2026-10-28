@@ -11,6 +11,8 @@ struct SearchResult {
     std::optional<Move> move;
     int completedDepth = 0;
     int nodes = 0;
+    // Positive favours White; 100 units is approximately one pawn.
+    std::optional<int> whiteEvaluation;
 };
 
 // Works only on value copies; safe to run while the GUI displays the live game.

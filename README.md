@@ -36,6 +36,18 @@ thinking; its old result will be discarded. Choose **Local two-player** to play
 with another person instead. Pawn promotion offers all four choices. Checkmate,
 stalemate, insufficient material, threefold repetition and the fifty-move rule
 end the game and appear in the status bar.
+A game-over dialog also shows the winner or draw reason. Choose **Play again**
+to restart with the current settings, or **View board** to inspect the final position.
+Choose **Replay game** in the result dialog or on the finished board to review
+the game. Step through moves with **First**, **Previous**, **Next**, and **Last**,
+or use **Play/Pause** for automatic playback. Replay preserves board orientation
+and never changes the finished game. Starting a new game clears its replay.
+The replay evaluation bar shows the built-in engine's advantage in pawn units
+(material balance while searching), with a suggested move for the side to move.
+This limited-depth analysis is not a guarantee of perfect play and does not track
+repetition history. Click a piece and a legal destination to explore an analysis
+variation, including promotion choices. **Return to recorded game** discards the
+variation and restores its starting point. Navigation icons have tooltips.
 
 The GUI and AI share a copyable `chess::Position` rules engine; search never
 modifies the displayed position. Rules, sliding-piece movement, AI behaviour,

@@ -24,6 +24,8 @@ int main() {
         p.squares[row][0]=Rook+(white?0:6); p.squares[row][3]=Queen+(white?6:0);
         const auto result=chooseMove(p,Difficulty::Medium,stop,9);
         require(result.move && result.move->toRow==row && result.move->toCol==3, "AI missed free queen");
+        require(result.whiteEvaluation && (white ? *result.whiteEvaluation>0 : *result.whiteEvaluation<0),
+                "Evaluation sign does not identify the leading colour");
     }
     Position p; p.squares[0][0]=King+6; p.squares[2][2]=King; p.squares[2][1]=Queen; p.whiteToMove=false;
     require(!chooseMove(p,Difficulty::Hard,stop,1).move, "AI moved after stalemate");
@@ -31,6 +33,7 @@ int main() {
     for(Move m:{Move{6,5,5,5},{1,4,3,4},{6,6,4,6}}) require(p.play(m), "Mate setup failed");
     const auto mate=chooseMove(p,Difficulty::Medium,stop,1);
     require(mate.move && p.after(*mate.move).outcome()==Outcome::Checkmate, "AI missed mate in one");
+    require(mate.whiteEvaluation && *mate.whiteEvaluation < -90000,"Forced mate evaluation missing");
     stop=true;
     require(!chooseMove(Position::initial(),Difficulty::Hard,stop,1).move, "Cancelled AI returned move");
 }

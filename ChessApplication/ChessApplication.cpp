@@ -2,6 +2,8 @@
 
 #include <QDialog>
 #include <QFrame>
+#include <QProgressBar>
+#include <QStyle>
 #include <QApplication>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -36,8 +38,222 @@ QPixmap piecePixmap(int pieceType) {
     return QPixmap(paths[pieceType]);
 }
 
+int choosePromotionPiece(QWidget* parent);
+
+// Replay owns a copy of the timeline and never changes the live game.
+class GameReplay : public QDialog {
+    std::vector<chess::Position> positions;
+    std::vector<chess::Move> moves;
+    const std::vector<chess::Position> originalPositions;
+    const std::vector<chess::Move> originalMoves;
+    std::optional<int> branchRoot;
+    std::optional<QPoint> selected;
+    QGraphicsView* view;
+    QProgressBar* evaluation;
+    QLabel* suggestion;
+    QPushButton* restore;
+    std::shared_ptr<std::atomic_bool> searchCancelled;
+    unsigned searchGeneration = 0;
+    bool white;
+    int index = 0;
+    QGraphicsScene scene;
+    QTimer timer;
+    QVariantAnimation animation;
+    QLabel* progress;
+    QPushButton *first, *previous, *play, *next, *last;
+
+    QPointF point(int row,int col) const {
+        return white ? QPointF(col*62.5,row*62.5) : QPointF((7-col)*62.5,(7-row)*62.5);
+    }
+    void paint(double t = 1) {
+        scene.clear();
+        auto* board=scene.addPixmap(QPixmap(":/Images/ChessBoard.png").scaled(500,500,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+        board->setZValue(-1);
+        board->setTransformOriginPoint(250,250);
+        board->setRotation(white ? 0 : 180);
+        const bool moving = t < 1 && index > 0;
+        const auto& position=positions[moving ? index-1 : index];
+        if(selected && !moving) {
+            auto p=point(selected->y(),selected->x());
+            scene.addRect(p.x(),p.y(),62.5,62.5,Qt::NoPen,QColor(246,196,65))->setZValue(-0.5);
+            for(auto m:position.legalMoves()) if(m.fromRow==selected->y() && m.fromCol==selected->x()) {
+                auto to=point(m.toRow,m.toCol);
+                scene.addEllipse(to.x()+23,to.y()+23,16,16,Qt::NoPen,QColor(40,140,180))->setZValue(1);
+            }
+        }
+        for(int row=0;row<8;++row) for(int col=0;col<8;++col) {
+            const int piece=position.squares[row][col];
+            if(!piece) continue;
+            auto* item=scene.addPixmap(piecePixmap(piece));
+            QPointF location=point(row,col);
+            if(moving) {
+                const auto move=moves[index-1];
+                if(row==move.fromRow && col==move.fromCol) {
+                    location+=(point(move.toRow,move.toCol)-location)*t;
+                    item->setZValue(2);
+                } else if(chess::kind(position.squares[move.fromRow][move.fromCol])==chess::King
+                          && std::abs(move.toCol-move.fromCol)==2 && row==move.fromRow
+                          && col==(move.toCol==6 ? 7 : 0)) {
+                    location+=(point(row,move.toCol==6 ? 5 : 3)-location)*t;
+                }
+            }
+            item->setPos(location);
+        }
+    }
+    void updateAnalysis() {
+        if(searchCancelled) searchCancelled->store(true);
+        const unsigned generation=++searchGeneration;
+        const auto snapshot=positions[index];
+        const int values[]={0,1,3,3,5,9,0};
+        int balance=0;
+        for(const auto& row:snapshot.squares) for(int p:row)
+            if(p) balance+=(chess::isWhite(p)?1:-1)*values[chess::kind(p)];
+        evaluation->setValue(std::clamp(100+balance*5,0,200));
+        evaluation->setFormat(balance==0 ? "Equal material" : QString("%1 +%2 (material)").arg(balance>0?"White":"Black").arg(std::abs(balance)));
+        suggestion->setText("Finding a move for " + QString(snapshot.whiteToMove?"White…":"Black…"));
+        suggestion->setProperty("ready",false);
+        searchCancelled=std::make_shared<std::atomic_bool>(false);
+        const auto token=searchCancelled;
+        auto* watcher=new QFutureWatcher<chess::SearchResult>(this);
+        connect(watcher,&QFutureWatcher<chess::SearchResult>::finished,this,[this,watcher,generation,snapshot] {
+            const auto result=watcher->result(); watcher->deleteLater();
+            if(generation!=searchGeneration) return;
+            suggestion->setProperty("ready",true);
+            if(!result.move) {
+                const bool mate=snapshot.outcome()==chess::Outcome::Checkmate;
+                evaluation->setValue(mate ? (snapshot.whiteToMove?0:200) : 100);
+                evaluation->setFormat(mate ? (snapshot.whiteToMove?"Black wins — checkmate":"White wins — checkmate") : "Draw");
+                suggestion->setText("No move suggestion — game over."); return;
+            }
+            if(result.whiteEvaluation) {
+                const int score=*result.whiteEvaluation;
+                evaluation->setValue(int(100+100*std::tanh(score/600.0)));
+                evaluation->setFormat(std::abs(score)>90000 ? (score>0?"White — forced mate":"Black — forced mate")
+                    : score==0 ? "Equal (engine)" : QString("%1 +%2 (engine)").arg(score>0?"White":"Black").arg(std::abs(score)/100.0,0,'f',2));
+            }
+            const auto m=*result.move;
+            QString text=QString("Suggested for %1: %2%3 → %4%5")
+                .arg(snapshot.whiteToMove?"White":"Black")
+                .arg(QChar('a'+m.fromCol)).arg(8-m.fromRow).arg(QChar('a'+m.toCol)).arg(8-m.toRow);
+            if(chess::kind(snapshot.squares[m.fromRow][m.fromCol])==chess::Pawn && (m.toRow==0 || m.toRow==7)) {
+                const char* names[]={"","pawn","knight","bishop","rook","queen","king"};
+                text+=" = "+QString(names[m.promotion]);
+            }
+            suggestion->setText(text+QString(" (depth %1)").arg(result.completedDepth));
+        });
+        watcher->setFuture(QtConcurrent::run([snapshot,token] { return chess::chooseMove(snapshot,chess::Difficulty::Hard,*token,42); }));
+    }
+    bool eventFilter(QObject* watched,QEvent* event) override {
+        if(watched!=view->viewport() || event->type()!=QEvent::MouseButtonRelease) return QDialog::eventFilter(watched,event);
+        auto* mouse=static_cast<QMouseEvent*>(event);
+        if(mouse->button()!=Qt::LeftButton || animation.state()==QAbstractAnimation::Running) return true;
+        pause();
+        auto p=view->mapToScene(mouse->position().toPoint());
+        if(p.x()<0 || p.y()<0 || p.x()>=500 || p.y()>=500) return true;
+        int col=int(p.x()/62.5),row=int(p.y()/62.5);
+        if(!white) { row=7-row; col=7-col; }
+        if(selected) for(auto move:positions[index].legalMoves()) {
+            if(move.fromRow!=selected->y() || move.fromCol!=selected->x() || move.toRow!=row || move.toCol!=col) continue;
+            if(chess::kind(positions[index].squares[move.fromRow][move.fromCol])==chess::Pawn && (row==0 || row==7)) {
+                const int types[]={chess::Queen,chess::Rook,chess::Bishop,chess::Knight};
+                move.promotion=types[choosePromotionPiece(this)];
+            }
+            auto position=positions[index];
+            if(!position.play(move)) return true;
+            if(!branchRoot) branchRoot=index;
+            positions.resize(index+1); moves.resize(index);
+            moves.push_back(move); positions.push_back(position);
+            go(index+1,true); return true;
+        }
+        selected.reset();
+        const int piece=positions[index].squares[row][col];
+        if(piece && chess::isWhite(piece)==positions[index].whiteToMove) selected=QPoint(col,row);
+        paint(); return true;
+    }
+    void pause() { timer.stop(); play->setText("Play"); }
+    void go(int target,bool animate=false) {
+        animation.stop();
+        selected.reset();
+        index=std::clamp(target,0,int(moves.size()));
+        QString text=QString("Move %1 of %2").arg(index).arg(moves.size());
+        if(index) {
+            const auto move=moves[index-1];
+            text+=QString(" — %1: %2%3 → %4%5")
+                .arg(positions[index-1].whiteToMove ? "White" : "Black")
+                .arg(QChar('a'+move.fromCol)).arg(8-move.fromRow)
+                .arg(QChar('a'+move.toCol)).arg(8-move.toRow);
+        } else text+=" — Starting position";
+        if(branchRoot) text="Analysis variation · "+text;
+        progress->setText(text);
+        restore->setEnabled(branchRoot.has_value());
+        updateAnalysis();
+        first->setEnabled(index>0); previous->setEnabled(index>0);
+        next->setEnabled(index<int(moves.size())); last->setEnabled(index<int(moves.size()));
+        if(index==int(moves.size())) pause();
+        if(animate && index>0) { paint(0); animation.start(); } else paint();
+    }
+public:
+    GameReplay(QWidget* parent,const std::vector<chess::Position>& positions,
+               const std::vector<chess::Move>& moves,bool white)
+        : QDialog(parent),positions(positions),moves(moves),originalPositions(positions),originalMoves(moves),white(white) {
+        setObjectName("gameReplayDialog"); setWindowTitle("Game replay");
+        setAttribute(Qt::WA_DeleteOnClose);
+        auto* layout=new QVBoxLayout(this);
+        progress=new QLabel(this); progress->setObjectName("replayProgress");
+        progress->setAlignment(Qt::AlignCenter); layout->addWidget(progress);
+        evaluation=new QProgressBar(this); evaluation->setObjectName("replayEvaluation");
+        evaluation->setRange(0,200); evaluation->setAlignment(Qt::AlignCenter);
+        evaluation->setToolTip("Built-in engine evaluation in pawn units; material balance while searching. Not a win probability. Repetition history is not evaluated.");
+        layout->addWidget(evaluation);
+        view=new QGraphicsView(&scene,this);
+        view->viewport()->installEventFilter(this);
+        view->setFixedSize(502,502); scene.setSceneRect(0,0,500,500);
+        view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        layout->addWidget(view);
+        auto* controls=new QHBoxLayout(); layout->addLayout(controls);
+        auto button=[&](const char* text,const char* name) {
+            auto* b=new QPushButton(text,this); b->setObjectName(name); controls->addWidget(b); return b;
+        };
+        first=button("First","replayFirst"); previous=button("Previous","replayPrevious");
+        play=button("Play","replayPlay"); next=button("Next","replayNext"); last=button("Last","replayLast");
+        for(auto entry : {std::pair{first,QStyle::SP_MediaSkipBackward}, {previous,QStyle::SP_MediaSeekBackward},
+                          {next,QStyle::SP_MediaSeekForward}, {last,QStyle::SP_MediaSkipForward}}) {
+            entry.first->setToolTip(entry.first->text()); entry.first->setAccessibleName(entry.first->text());
+            entry.first->setIcon(style()->standardIcon(entry.second)); entry.first->setText("");
+        }
+        suggestion=new QLabel(this); suggestion->setObjectName("replaySuggestion");
+        suggestion->setToolTip("Best move found by the built-in engine at Hard difficulty; not a guarantee of perfect play.");
+        suggestion->setWordWrap(true); layout->addWidget(suggestion);
+        auto* help=new QLabel("Click a piece, then a legal square to try an alternative move.",this);
+        layout->addWidget(help);
+        restore=new QPushButton("Return to recorded game",this); restore->setObjectName("replayRestore"); layout->addWidget(restore);
+        connect(restore,&QPushButton::clicked,this,[this]{
+            pause(); const int target=branchRoot.value_or(index);
+            this->positions=originalPositions; this->moves=originalMoves; branchRoot.reset(); go(target);
+        });
+        connect(first,&QPushButton::clicked,this,[this]{ pause(); go(0); });
+        connect(previous,&QPushButton::clicked,this,[this]{ pause(); go(index-1); });
+        connect(next,&QPushButton::clicked,this,[this]{ pause(); go(index+1,true); });
+        connect(last,&QPushButton::clicked,this,[this]{ pause(); go(int(this->moves.size())); });
+        connect(play,&QPushButton::clicked,this,[this]{
+            if(timer.isActive()) { pause(); return; }
+            if(index==int(this->moves.size())) go(0);
+            timer.start(900); play->setText("Pause"); go(index+1,true);
+        });
+        connect(&timer,&QTimer::timeout,this,[this]{ go(index+1,true); });
+        animation.setDuration(moveDurationMs); animation.setStartValue(0.0); animation.setEndValue(1.0);
+        animation.setEasingCurve(QEasingCurve::InOutCubic);
+        connect(&animation,&QVariantAnimation::valueChanged,this,[this](const QVariant& value){ paint(value.toDouble()); });
+        connect(this,&QDialog::finished,this,[this]{ pause(); animation.stop(); if(searchCancelled) searchCancelled->store(true); ++searchGeneration; });
+        go(0);
+    }
+    ~GameReplay() override { if(searchCancelled) searchCancelled->store(true); }
+};
+
 int choosePromotionPiece(QWidget* parent) {
     QDialog dialog(parent);
+    dialog.setObjectName("promotionDialog");
     dialog.setWindowTitle("Pawn Promotion");
     auto* layout = new QVBoxLayout(&dialog);
     const char* names[] = {"Queen", "Rook", "Bishop", "Knight"};
@@ -131,6 +347,10 @@ ChessApplication::ChessApplication(QWidget* parent, bool computerOpponent, chess
     status = new QLabel(this);
     status->setObjectName("gameStatus");
     ui.statusBar->addWidget(status,1);
+    replayButton = new QPushButton("Replay game",this);
+    replayButton->setObjectName("replayGame");
+    ui.statusBar->addPermanentWidget(replayButton);
+    connect(replayButton,&QPushButton::clicked,this,&ChessApplication::showReplay);
     startGame(initial);
 }
 
@@ -155,11 +375,16 @@ void ChessApplication::newGame() {
 }
 
 void ChessApplication::startGame(chess::Position position) {
+    if (resultDialog) resultDialog->close();
+    if (replayDialog) replayDialog->close();
+    resultShown = false;
     if (cancelled) cancelled->store(true);
     ++generation;
     stopMoveAnimation();
     thinking = false;
     game = position;
+    history = {game};
+    moveHistory.clear();
     humanWhite = colourChoice->currentIndex() == 0;
     againstComputer = opponentChoice->currentIndex() == 0;
     difficulty = static_cast<chess::Difficulty>(difficultyChoice->currentIndex());
@@ -232,6 +457,68 @@ void ChessApplication::render() {
         status->setText(turn + (game.inCheck(game.whiteToMove) ? " - Check!" : ""));
     }
     boardInput->setEnabled(!gameOver && !thinking && !moveAnimating() && (!againstComputer || game.whiteToMove == humanWhite));
+    replayButton->setVisible(gameOver && !moveHistory.empty());
+    if (gameOver && !resultShown) {
+        resultShown = true;
+        const unsigned current = generation;
+        QTimer::singleShot(0,this,[this,current,result] {
+            if (current == generation && gameOver) showGameResult(result);
+        });
+    }
+}
+
+void ChessApplication::showGameResult(chess::Outcome result) {
+    auto* dialog = new QDialog(this);
+    resultDialog = dialog;
+    dialog->setObjectName("gameResultDialog");
+    dialog->setWindowTitle("Game over");
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setMinimumWidth(340);
+    auto* layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(28,24,28,24);
+    layout->setSpacing(16);
+    QString title = "Draw";
+    if (result == chess::Outcome::Checkmate) {
+        title = againstComputer ? (game.whiteToMove == humanWhite ? "Computer wins" : "You win!")
+                                : (game.whiteToMove ? "Black wins" : "White wins");
+    }
+    auto* heading = new QLabel(title,dialog);
+    heading->setObjectName("gameResultTitle");
+    heading->setAlignment(Qt::AlignCenter);
+    auto font = heading->font();
+    font.setPointSize(24);
+    font.setBold(true);
+    heading->setFont(font);
+    layout->addWidget(heading);
+    auto* detail = new QLabel(status->text(),dialog);
+    detail->setObjectName("gameResultDetail");
+    detail->setAlignment(Qt::AlignCenter);
+    detail->setWordWrap(true);
+    layout->addWidget(detail);
+    auto* buttons = new QHBoxLayout();
+    auto* review = new QPushButton("View board",dialog);
+    review->setObjectName("viewFinalBoard");
+    auto* again = new QPushButton("Play again",dialog);
+    again->setObjectName("playAgain");
+    again->setDefault(true);
+    auto* replay = new QPushButton("Replay game",dialog);
+    replay->setObjectName("replayResult");
+    replay->setEnabled(!moveHistory.empty());
+    buttons->addWidget(replay);
+    connect(replay,&QPushButton::clicked,this,[this,dialog] { dialog->accept(); showReplay(); });
+    buttons->addWidget(review);
+    buttons->addWidget(again);
+    layout->addLayout(buttons);
+    connect(review,&QPushButton::clicked,dialog,&QDialog::accept);
+    connect(again,&QPushButton::clicked,this,[this] { newGame(); });
+    dialog->open();
+}
+
+void ChessApplication::showReplay() {
+    if (!gameOver || moveHistory.empty()) return;
+    if (replayDialog) { replayDialog->raise(); return; }
+    replayDialog = new GameReplay(this,history,moveHistory,humanWhite);
+    replayDialog->open();
 }
 
 void ChessApplication::updateCaptureDisplay() {
@@ -396,6 +683,8 @@ void ChessApplication::applyMove(const chess::Move& move, std::optional<QPointF>
         captured = game.squares[move.fromRow][move.toCol];
     }
     if (!game.play(move)) return;
+    history.push_back(game);
+    moveHistory.push_back(move);
     if (captured) capturedPieces.push_back(captured);
     ++repetitions[game.repetitionKey()];
     selectedMoves.clear();

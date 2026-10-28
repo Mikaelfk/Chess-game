@@ -12,6 +12,8 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <QPointer>
+#include <QDialog>
 #include "../ChessBackend/ChessAI.h"
 #include "ui_ChessApplication.h"
 
@@ -51,6 +53,12 @@ private:
     chess::Position game;
     chess::Difficulty difficulty = chess::Difficulty::Medium;
     bool humanWhite = true, againstComputer = true, thinking = false, gameOver = false;
+    bool resultShown = false;
+    QPointer<QDialog> resultDialog;
+    QPointer<QDialog> replayDialog;
+    QPushButton* replayButton;
+    std::vector<chess::Position> history;
+    std::vector<chess::Move> moveHistory;
     std::vector<chess::Move> selectedMoves;
     std::optional<QPoint> selectedSquare;
     std::map<std::string, int> repetitions;
@@ -70,6 +78,8 @@ private:
     void startGame(chess::Position position);
     void newGame();
     void render();
+    void showGameResult(chess::Outcome result);
+    void showReplay();
     void updateCaptureDisplay();
     void applyMove(const chess::Move& move, std::optional<QPointF> dragStart = std::nullopt);
     void stopMoveAnimation();

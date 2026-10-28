@@ -86,6 +86,7 @@ SearchResult chooseMove(const Position& p, Difficulty difficulty, const std::ato
         if (search.interrupted) break; // Keep the last fully searched result.
         result.move = choice;
         result.completedDepth = depth;
+        result.whiteEvaluation = p.whiteToMove ? best : -best;
         const auto chosen = std::find(moves.begin(), moves.end(), choice);
         std::rotate(moves.begin(), chosen, chosen+1);
     }
