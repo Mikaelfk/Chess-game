@@ -51,7 +51,7 @@ Good luck :)
 ## Download a prebuilt game
 
 The [Build workflow](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml)
-builds and tests Windows x64 and Linux x64 packages on every push and on pull
+builds and tests Windows x64 and Linux x64 packages on pushes to `main` and on pull
 requests to `main`. It can also be started manually using **Run workflow** once
 this workflow is on the default branch.
 
