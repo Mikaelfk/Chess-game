@@ -11,6 +11,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include "../ChessBackend/ChessAI.h"
 #include "ui_ChessApplication.h"
 
@@ -27,6 +28,9 @@ public:
 
 public slots:
     void on_pushButtonClicked();
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     Ui::ChessApplication ui;
@@ -49,12 +53,20 @@ private:
     std::shared_ptr<std::atomic_bool> cancelled;
     unsigned generation = 0;
     QParallelAnimationGroup* moveAnimation = nullptr;
+    QGraphicsPixmapItem* draggedPiece = nullptr;
+    QPointF pressPosition, dragOrigin, dragOffset;
+    bool boardPressed = false, dragging = false;
 
     QPoint displaySquare(int row, int column) const;
+    QPoint boardSquare(QPointF point) const;
+    bool inputAllowed() const;
+    void resetDrag();
+    void selectSquare(QPoint square);
+    bool moveTo(QPoint square, std::optional<QPointF> dragStart = std::nullopt);
     void startGame(chess::Position position);
     void newGame();
     void render();
-    void applyMove(const chess::Move& move);
+    void applyMove(const chess::Move& move, std::optional<QPointF> dragStart = std::nullopt);
     void stopMoveAnimation();
     void queueComputerMove();
 };
