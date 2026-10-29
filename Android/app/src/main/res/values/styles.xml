@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Qt 6.8 lays out content in the window's available area. Keep system
+    <!-- SDL lays out content in the surface's available area. Keep system
          bars opaque and outside that area instead of drawing beneath them. -->
     <style name="ChessBaseTheme" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:windowFullscreen">false</item>

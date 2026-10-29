@@ -1,0 +1,21 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.mikaelfk.chess'
+    compileSdk 35
+    ndkVersion '26.1.10909125'
+    defaultConfig {
+        applicationId 'com.mikaelfk.chess'
+        minSdk 28
+        targetSdk 35
+        versionCode 2
+        versionName '2.0.0'
+        ndk { abiFilters.addAll((project.findProperty('chessAbis') ?: 'arm64-v8a').split(',')) }
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_shared'; targets 'main', 'SDL2' } }
+    }
+    externalNativeBuild { cmake { path '../../CMakeLists.txt'; version '3.22.1' } }
+    sourceSets.main.java.srcDirs += '../../out/deps/SDL/android-project/app/src/main/java'
+}
+// CMake fetches pinned SDL sources, including SDLActivity, before javac needs them.
+tasks.withType(JavaCompile).configureEach {
+    dependsOn tasks.matching { it.name.startsWith('configureCMake') }
+}
