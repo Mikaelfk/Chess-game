@@ -15,6 +15,22 @@ ApplicationWindow {
     Material.accent: "#dab779"
     Material.primary: "#243a30"
     property bool autoPlaying: false
+    property var movingPieces: []
+    function isMoving(square) {
+        return movingPieces.some(function(piece) { return piece.to === square })
+    }
+    function animateMove(from, to, rookFrom, rookTo) {
+        function piece(start, end) {
+            const a = game.humanWhite ? start : 63 - start
+            const b = game.humanWhite ? end : 63 - end
+            return {from: a, to: end, destination: b, image: game.board[b].image}
+        }
+        let pieces = [piece(from, to)]
+        if (rookFrom >= 0) pieces.push(piece(rookFrom, rookTo))
+        movingPieces = pieces
+        animationEnd.restart()
+    }
+    Timer { id: animationEnd; interval: 220; onTriggered: window.movingPieces = [] }
 
     ScrollView {
         id: scroll
@@ -46,6 +62,8 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
+                Layout.minimumHeight: 48
+                Layout.maximumHeight: 48
                 text: game.status
                 font.pixelSize: 19
                 font.bold: true
@@ -57,7 +75,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
-                BusyIndicator { running: game.thinking; visible: running; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
+                BusyIndicator { running: game.thinking; opacity: running ? 1 : 0; Layout.minimumWidth: 24; Layout.maximumWidth: 24; Layout.minimumHeight: 24; Layout.maximumHeight: 24 }
                 Label { Layout.fillWidth: true; text: game.material; color: "#bdc9bf" }
                 Label { text: (game.humanWhite ? "Black" : "White") + " ↑"; color: "#bdc9bf" }
             }
@@ -86,11 +104,12 @@ ApplicationWindow {
                                    : (Math.floor(index / 8) + index % 8) % 2 ? "#79927a" : "#e4ddc8"
                             Accessible.role: Accessible.Button
                             Accessible.name: modelData.coordinate + ", " + (modelData.name || "empty")
-                            Accessible.onPressAction: game.selectSquare(modelData.index)
+                            Accessible.onPressAction: { if (!window.movingPieces.length) game.selectSquare(modelData.index) }
                             Image {
                                 anchors.centerIn: parent
                                 width: parent.width * 0.86
                                 height: width
+                                visible: !window.isMoving(modelData.index)
                                 source: modelData.image
                                 fillMode: Image.PreserveAspectFit
                                 smooth: true
@@ -125,8 +144,30 @@ ApplicationWindow {
                             }
                             MouseArea {
                                 anchors.fill: parent
-                                enabled: !game.thinking && !game.replaying && !game.promotionPending && !game.gameOver
+                                enabled: !window.movingPieces.length && !game.thinking && !game.replaying && !game.promotionPending && !game.gameOver
                                 onClicked: game.selectSquare(modelData.index)
+                            }
+                        }
+                    }
+                }
+                Item {
+                    anchors.fill: board
+                    Repeater {
+                        model: window.movingPieces
+                        delegate: Image {
+                            required property var modelData
+                            id: movingPiece
+                            objectName: "movingPiece"
+                            width: board.width / 8 * 0.86
+                            height: width
+                            source: modelData.image
+                            fillMode: Image.PreserveAspectFit
+                            x: (modelData.destination % 8 + 0.07) * board.width / 8
+                            y: (Math.floor(modelData.destination / 8) + 0.07) * board.width / 8
+                            ParallelAnimation {
+                                running: true
+                                NumberAnimation { target: movingPiece; property: "x"; from: (modelData.from % 8 + 0.07) * board.width / 8; to: (modelData.destination % 8 + 0.07) * board.width / 8; duration: 200; easing.type: Easing.InOutQuad }
+                                NumberAnimation { target: movingPiece; property: "y"; from: (Math.floor(modelData.from / 8) + 0.07) * board.width / 8; to: (Math.floor(modelData.destination / 8) + 0.07) * board.width / 8; duration: 200; easing.type: Easing.InOutQuad }
                             }
                         }
                     }
@@ -206,7 +247,7 @@ ApplicationWindow {
             side.currentIndex = game.humanWhite ? 0 : 1
             difficulty.currentIndex = game.difficulty
         }
-        onAccepted: game.newGame(side.currentIndex === 0, opponent.currentIndex === 0, difficulty.currentIndex)
+        onAccepted: { window.movingPieces = []; game.newGame(side.currentIndex === 0, opponent.currentIndex === 0, difficulty.currentIndex) }
         ColumnLayout {
             width: parent.width
             Label { text: "Opponent" }
@@ -238,6 +279,7 @@ ApplicationWindow {
 
     Connections {
         target: game
+        function onMoveMade(from, to, rookFrom, rookTo) { window.animateMove(from, to, rookFrom, rookTo) }
         function onStateChanged() {
             if (game.promotionPending) promotion.open()
             else promotion.close()

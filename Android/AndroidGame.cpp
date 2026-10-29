@@ -127,6 +127,8 @@ void AndroidGame::cancelPromotion() {
 }
 
 void AndroidGame::applyMove(const chess::Move& move) {
+    const bool castle = chess::kind(current.squares[move.fromRow][move.fromCol]) == chess::King
+        && std::abs(move.toCol - move.fromCol) == 2;
     if (!current.play(move)) return;
     selected = -1;
     moves.push_back(move);
@@ -134,6 +136,9 @@ void AndroidGame::applyMove(const chess::Move& move) {
     ++repetitions[current.repetitionKey()];
     save();
     emit stateChanged();
+    emit moveMade(move.fromRow * 8 + move.fromCol, move.toRow * 8 + move.toCol,
+                  castle ? move.fromRow * 8 + (move.toCol > move.fromCol ? 7 : 0) : -1,
+                  castle ? move.fromRow * 8 + (move.toCol > move.fromCol ? 5 : 3) : -1);
     queueComputerMove();
 }
 
@@ -166,7 +171,7 @@ void AndroidGame::queueComputerMove() {
     const unsigned request = generation;
     emit stateChanged();
     // Let the board and thinking status paint before doing background work.
-    QTimer::singleShot(200, this, [this, token, snapshot, difficulty, request] {
+    QTimer::singleShot(500, this, [this, token, snapshot, difficulty, request] {
         if (token->load() || request != generation) return;
         auto* watcher = new QFutureWatcher<chess::SearchResult>(this);
         connect(watcher, &QFutureWatcher<chess::SearchResult>::finished, this, [this, watcher, token, request] {

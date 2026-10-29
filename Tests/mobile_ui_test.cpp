@@ -51,6 +51,23 @@ int main(int argc, char** argv) {
         QTest::qWait(20);
     }
     require(game.position().squares[4][4] == chess::Pawn, "Touch input did not play e2-e4");
+    auto* animated = visualItem(window->contentItem(), "movingPiece");
+    require(animated, "Move animation was not created");
+    const auto initialY = animated->y();
+    QTest::qWait(80);
+    require(animated->y() < initialY, "Pawn animation did not travel toward e4");
+    QTest::qWait(180);
+    require(!visualItem(window->contentItem(), "movingPiece"), "Move animation did not finish");
+    game.newGame(true, true, 0); QTest::qWait(30);
+    const auto boardPosition = board->mapToScene(QPointF());
+    game.selectSquare(52); game.selectSquare(36);
+    QTest::qWait(100);
+    require(game.thinking() && game.replayLength() == 1, "Computer did not pause before replying");
+    require(board->mapToScene(QPointF()) == boardPosition, "Thinking indicator shifted the board");
+    for (int i = 0; i < 100 && game.thinking(); ++i) QTest::qWait(50);
+    require(!game.thinking() && game.replayLength() == 2, "Computer did not reply");
+    require(board->mapToScene(QPointF()) == boardPosition, "Board shifted after computer reply");
+    QTest::qWait(250);
     game.newGame(false, false, 0); QTest::qWait(20);
     for (int square : {52, 36}) {
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, squareCenter(window, square));

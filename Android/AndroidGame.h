@@ -56,6 +56,7 @@ public:
     void setApplicationActive(bool active);
 signals:
     void stateChanged();
+    void moveMade(int from, int to, int rookFrom, int rookTo);
 private:
     chess::Position current = chess::Position::initial();
     std::vector<chess::Position> history;
