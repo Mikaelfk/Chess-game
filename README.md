@@ -1,173 +1,166 @@
 # Chess-game
-[![CMake](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml/badge.svg)](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml)
 
-This is bad :D
+[![Build](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml/badge.svg)](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml)
 
+A C++ chess game for Windows, Linux, and Android. The entire frontend uses
+**Dear ImGui with SDL2**. The shared `chess::Position` engine provides legal moves,
+results, and computer search. No Qt SDK, libraries, QML, or plugins are needed.
 
-## Play against the computer
+## Play
 
-The game starts with you playing White against the computer at Medium difficulty.
-Choose **Your side** (White or Black), select **Easy**, **Medium**, or **Hard**, and
-click **New game** to apply your choices. When you choose Black, the computer
-plays White's opening move and the board rotates so your pieces are at the bottom.
-Piece selection, move hints and check highlights follow that orientation.
-The selected piece's square is shaded gold, including while dragging.
-Click a piece to see its legal moves: filled dots mark quiet moves, and red rings
-mark captures (including en passant). Click a destination or drag the piece onto
-it. Illegal drops and drops outside the board return the piece to its square;
-press Escape to cancel a drag.
+The default game is White against the computer at Medium difficulty. **New game**
+lets you choose your side, difficulty, or local two-player mode. Choosing Black
+rotates the board and lets the computer play White's opening move.
 
-- **Easy:** chooses a random legal move.
-- **Medium:** searches two plies ahead, balancing material and piece activity.
-- **Hard:** searches up to four plies with alpha-beta pruning and a 1.5-second
-  thinking budget. Search depth can be lower on slower machines.
+Tap/click a piece and destination, or drag onto a highlighted square. Gold marks
+selection, dots mark quiet moves, red rings mark captures (including en passant),
+and red highlights a checked king. Illegal/off-board drops leave the position
+unchanged. Escape cancels selection or dragging.
 
-Moves slide smoothly between squares, including both pieces during castling.
-Captures disappear and promoted pawns change appearance when the move finishes.
-The computer pauses briefly before each move, even on Easy difficulty. Board
-input is locked during movement so turns cannot overlap.
-Captured pieces are grouped by type (for example, `5x` and one pawn icon).
-The side ahead in material shows a `+N` score: pawns count as 1, knights and
-bishops as 3, rooks as 5, and queens as 9. The score includes promotions;
-no advantage is shown when material is equal.
+Tap and computer moves animate, including the rook when castling. Dragged pieces
+land immediately, including promotion. Input locks during animation and computer
+thinking. The computer pauses half a second before starting a worker-thread
+search. New games and lifecycle changes cancel stale work. Promotion offers queen,
+rook, bishop, and knight.
 
-The computer thinks in the background. You can start a new game while it is
-thinking; its old result will be discarded. Choose **Local two-player** to play
-with another person instead. Pawn promotion offers all four choices. Checkmate,
-stalemate, insufficient material, threefold repetition and the fifty-move rule
-end the game and appear in the status bar.
-A game-over dialog also shows the winner or draw reason. Choose **Play again**
-to restart with the current settings, or **View board** to inspect the final position.
-Choose **Replay game** in the result dialog or on the finished board to review
-the game. Step through moves with **First**, **Previous**, **Next**, and **Last**,
-or use **Play/Pause** for automatic playback. Replay preserves board orientation
-and never changes the finished game. Starting a new game clears its replay.
-The replay evaluation bar shows the built-in engine's advantage in pawn units
-(material balance while searching), with a suggested move for the side to move.
-This limited-depth analysis is not a guarantee of perfect play and does not track
-repetition history. Click a piece and a legal destination to explore an analysis
-variation, including promotion choices. **Return to recorded game** discards the
-variation and restores its starting point. Navigation icons have tooltips.
+- **Easy:** random legal move.
+- **Medium:** two-ply search with material and piece activity.
+- **Hard:** up to four plies with alpha-beta pruning and a 1.5-second budget.
 
-The GUI and AI share a copyable `chess::Position` rules engine; search never
-modifies the displayed position. Rules, sliding-piece movement, AI behaviour,
-and the application are tested against that same engine.
+Captured pieces appear as grouped icons on the capturing player's side: black
+pieces taken by White appear next to White, and vice versa. The rows rotate
+with the board and stay in place even when empty. Counts follow actual captures,
+including en passant and replay variations; promotion is not a capture.
+
+Piece artwork uses antialiased vector renders at several sizes with smooth
+filtering for board pieces and small capture icons. See the
+[artwork attribution and sources](Assets/Pieces/README.md).
+
+Material advantage is shown above the board. Pawns
+count as 1, knights/bishops as 3, rooks as 5, and queens as 9; promotions affect
+balance. Checkmate, stalemate, insufficient material, threefold repetition, and
+the fifty-move rule end the game. The result dialog offers **Play again**, **View
+board**, and **Replay game**.
+
+## Replay and analysis
+
+Replay has a fixed bottom toolbar with icons ordered **First**, **Previous**,
+**Play/Pause**, **Next**, **Last**, with hover labels. Beginning/end controls are
+disabled when unavailable. **Close replay** is the top-right X; the curved-arrow
+icon beside the move counter returns from an analysis variation to the recording.
+The board fits the remaining height; analysis sits beside it in landscape.
+Navigation stays visible on short screens even if the position pane needs scrolling.
+The evaluation bar appears **only in replay**. Its light portion represents White,
+with an engine advantage in pawn units and a suggested move. Material balance is
+shown while background analysis runs. Evaluation is not a win probability and
+does not track repetition history.
+
+Move pieces during replay to explore an analysis variation, including promotion.
+**Return to recorded game** restores its starting point. **Close replay** returns
+to the finished game. Replay and variations never change the saved game.
+
+## Saving and input
+
+Moves/settings are saved as version-1 JSON with atomic file replacement. Desktop
+saves use SDL's per-user `Mikaelfk/Chess` application directory; Android uses
+private `files/game.json`. The schema remains compatible with the earlier Android
+app. Invalid saves start a new game with an error. A new game replaces the save.
+Play and analysis work offline.
+
+The shared frontend handles desktop mouse and Android touch input. Layouts scale
+with display density and scroll on short screens; swipe outside the board to
+scroll on a phone. System bars stay outside Android content. See the
+[Android guide](Android/README.md) for APKs, builds, and mobile limitations.
+
+## Build on Linux
+
+Requirements: CMake **3.22+**, a C++17 compiler, Ninja or another CMake generator,
+and development headers for SDL's platform backends. On Ubuntu/Debian:
+
+```sh
+sudo apt-get install build-essential cmake ninja-build libx11-dev libxext-dev \
+  libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev
+cmake --preset debug
+cmake --build --preset debug --parallel 2
+./out/build/debug/Chess
+```
+
+First configuration downloads hash-verified SDL 2.32.10 and Dear ImGui 1.91.9b.
+JSON and PNG decoder headers are vendored. See [third_party](third_party/README.md)
+for versions, licenses, and offline source overrides. Piece PNGs are embedded in
+the executable, so no external asset directory is needed.
+
+## Build on Windows
+
+Install Visual Studio 2022 with **Desktop development with C++** and CMake. From
+a Developer PowerShell:
+
+```powershell
+cmake -S . -B out/build/windows -G "Visual Studio 17 2022" -A x64
+cmake --build out/build/windows --config Release --parallel 2
+ctest --test-dir out/build/windows -C Release --output-on-failure
+./out/build/windows/Release/Chess.exe
+```
+
+Ninja presets also work in a developer shell with `cl.exe` on PATH. SDL and ImGui
+are static desktop libraries. Linux still requires system graphics and C/C++
+runtimes. Windows installation includes the MSVC runtime with
+`-DCHESS_DEPLOY_RUNTIME=ON`.
 
 ## Tests and line coverage
 
-See the [test coverage review](docs/test-coverage.md) for measured percentages,
-missed line numbers, additional tests, and remaining gaps.
-
-Run the CTest suites (rules, sliding pieces, AI, the offscreen desktop application,
-and the mobile game controller) after building. The optional mobile preview also
-adds a QML touch and layout test:
-
 ```sh
-ctest --test-dir <build-directory> --output-on-failure --no-tests=error
+ctest --test-dir out/build/debug --output-on-failure --no-tests=error
 ```
 
-For line coverage, use GCC with matching `gcov`, Qt, CMake, and Python 3.10+.
-Keep this in a separate build directory so normal builds remain uninstrumented:
+Six suites cover rules/perft, sliding pieces, AI, the shared frontend controller,
+actual ImGui input/layout, and SDL rendering. The renderer test uses SDL's dummy
+video driver/software renderer without a desktop session. Tests exercise rotated
+drag/tap input, illegal drops, promotion, replay variations/evaluation, save
+validation, cancellation, and computer delays.
+
+For GCC coverage, install Python 3.10+ and matching `gcov`:
 
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-coverage.txt
-cmake -S . -B out/build/coverage -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAGE=ON
-cmake --build out/build/coverage --target coverage --parallel 2
+cmake --preset coverage
+cmake --build --preset coverage --parallel 2
 ```
 
-Open **`out/build/coverage/coverage/index.html`** in your browser and click a
-filename to see the **actual source code** with line numbers and execution counts:
+Open `out/build/coverage/coverage/index.html`, then click a filename for actual
+source and execution counts. Green means covered; red means missed; yellow means
+partially covered branches; unshaded lines are not executable. The self-contained
+HTML works offline. Reports also include LCOV (`coverage.info`), Cobertura XML,
+JSON totals, text with missed lines, and Markdown. Load LCOV in an editor viewer
+such as Coverage Gutters; CI paths may need mapping to your checkout.
 
-- **Green:** executable lines covered by the tests.
-- **Yellow:** executed lines with branches the tests did not all exercise.
-- **Red:** executable lines the tests did not cover (zero executions).
-- **Unshaded:** comments, blank lines, and other non-executable code.
+Reports include `ChessBackend/` and `Frontend/`, including the entry point. They
+exclude libraries, generated image data, Java, Python, and tests.
+**Coverage is informational; no minimum percentage is enforced.** See the
+[coverage review](docs/test-coverage.md) for a migration snapshot and remaining
+gaps. CI publishes **Chess-test-coverage**, retained for 30 days.
 
-All source files, navigation, and styles are embedded in this single HTML file,
-so it can be opened offline or shared on its own. **Coverage is informational:**
-there is no minimum percentage, and low coverage does not fail the build or CI.
-Build errors, failing tests, and report-generation errors still fail the command.
+## Packages and CI
 
-To highlight coverage directly in your editor, load
-`out/build/coverage/coverage/coverage.info` using an LCOV-compatible viewer. For
-example, open the repository in VS Code, install **Coverage Gutters**, and run
-**Coverage Gutters: Display Coverage**. If the file is not discovered automatically,
-add `coverage.info` to the extension's
-`coverage-gutters.coverageFileNames` setting. Generate coverage locally for this
-so the source paths match your checkout; downloaded CI LCOV needs source-path
-mapping in your viewer.
+Build, coverage, and Android workflows run on PRs targeting `main` and pushes to
+`main`. Desktop Build and Test coverage also allow manual runs.
 
-The same directory contains a Markdown summary (`summary.md`), a text report
-with missed line numbers (`coverage.txt`), Cobertura XML (`coverage.xml`), and
-JSON totals (`summary.json`). Reports include all compiled production C++ sources
-and headers under `ChessBackend/`, `ChessApplication/`, and `Android/`, including the entry
-point even though CTest does not execute it. Test code, generated Qt code, external
-libraries, and Python packaging scripts are outside the C++ coverage metric.
-Line coverage measures execution; it does not prove every branch or rule is correct.
+Download **Chess-Windows-x64** or **Chess-Linux-x64** from a successful Build run.
+Extract the ZIP, keep the `Chess` folder together, and run `Chess/bin/Chess.exe` or
+`Chess/bin/Chess`. Restore Linux executable permissions with
+`chmod +x Chess/bin/Chess` if necessary. Windows builds are unsigned. Linux CI
+targets Ubuntu 22.04 and compatible newer environments, not all distributions.
 
-The `coverage` target builds the application and tests, clears old counters and
-reports, runs every suite, and generates fresh reports. Atomic counters support
-the application's background engine searches. The separate **Test coverage**
-GitHub Actions workflow generates these reports on pull requests and pushes to
-`main`. Its run summary shows per-file percentages and a **Download the source
-coverage report** link. Download **Chess-test-coverage**, extract the ZIP, and open
-`index.html` in a browser for the code with line-by-line coverage. GitHub's file
-preview does not render this HTML viewer. Reports are retained for 30 days.
-
-Additional regression tests cover minor-piece draw combinations, the 100-halfmove
-boundary and clock resets, checkmate taking precedence over the fifty-move rule,
-castling and legal en-passant rights in repetition identity, terminal/cancelled
-AI searches, and repeatable seeded Easy moves. Existing perft and GUI tests remain
-essential even when their lines are already covered.
-
-## How to run the application
-
-### Android
-
-The [Android application](Android/README.md) provides a phone interface with
-tap-to-move play, AI, local two-player games, automatic game saving, and replay.
-The **Android** workflow builds installable test APKs for Android 9+ ARM64 phones
-and x86_64 emulators. See the Android guide for download, installation, build,
-and testing instructions.
-
-### Linux
-cmake and Qt 6.3.0 or newer is required. If running older Qt version remove ```qt_standard_project_setup()``` from [CMakeLists.txt](CMakeLists.txt) and it *might* work.
-
-Run these commands while in the project folder to run the the application
-```
-cmake .
-make
-./Chess
+```sh
+cmake -S . -B out/build/release -DCMAKE_BUILD_TYPE=Release -DCHESS_DEPLOY_RUNTIME=ON
+cmake --build out/build/release --config Release --parallel 2
+cmake --install out/build/release --config Release --prefix out/package/Chess
+python .github/scripts/smoke-package.py out/package/Chess/bin/Chess
 ```
 
-
-### Windows
-Good luck :)
-
-## Download a prebuilt game
-
-The [Build workflow](https://github.com/Mikaelfk/Chess-game/actions/workflows/cmake.yml)
-builds and tests Windows x64 and Linux x64 packages on pushes to `main` and on pull
-requests to `main`. It can also be started manually using **Run workflow** once
-this workflow is on the default branch.
-
-Open a successful run and download **Chess-Windows-x64** or **Chess-Linux-x64**
-from **Artifacts** (GitHub sign-in is required). Artifacts are retained for 30 days.
-Extract the downloaded ZIP once:
-
-- **Windows 11:** extract `Chess-Windows-x64.zip` and open `Chess/bin/Chess.exe`.
-  Keep the entire `Chess` folder together: Qt plugins, DLLs and configuration
-  files are included. No compiler or Qt installation is needed. Builds are unsigned;
-  Windows Smart App Control may block them.
-- **Linux:** extract `Chess-Linux-x64.zip`, then run `chmod +x Chess/bin/Chess`
-  and `./Chess/bin/Chess` from a graphical desktop. GitHub artifact ZIPs do not
-  preserve executable permissions. Qt libraries/plugins are bundled; system
-  graphics libraries are still required. The build targets Ubuntu 22.04 or compatible newer distributions,
-  not every Linux distribution.
-
-CI uses Qt 6.8.3, MSVC on Windows, and GCC on Linux. To create a runtime package
-locally with Qt 6.5 or newer, configure with `-DCHESS_DEPLOY_RUNTIME=ON` and
-`-DCMAKE_INSTALL_LIBDIR=lib`, build, then run
-`cmake --install <build-directory> --config Release --prefix <package-directory>`.
+The package smoke test actually renders the board/textures. Linux CI runs it under
+Xvfb, in addition to headless CTest rendering. Android builds ARM64/x86_64 APKs and
+checks a real touch drag, AI reply, status-bar spacing, and game restoration on
+an API 35 emulator.

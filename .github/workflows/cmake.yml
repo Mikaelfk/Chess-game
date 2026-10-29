@@ -1,15 +1,12 @@
 name: Build
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   build:
     name: ${{ matrix.platform }} x64
@@ -21,63 +18,35 @@ jobs:
         include:
           - platform: Windows
             os: windows-2022
-            qt-arch: win64_msvc2022_64
             generator: Visual Studio 17 2022
           - platform: Linux
             os: ubuntu-22.04
-            qt-arch: linux_gcc_64
             generator: Ninja
-
     steps:
       - uses: actions/checkout@v6
-
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build xvfb xauth libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.3'
-          arch: ${{ matrix.qt-arch }}
-          cache: true
-
+          sudo apt-get install -y ninja-build libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev xvfb xauth
       - name: Configure
         run: >-
-          cmake -S . -B out/build/ci
-          -G "${{ matrix.generator }}"
-          -DCMAKE_BUILD_TYPE=Release
-          -DCHESS_DEPLOY_RUNTIME=ON
-          -DCMAKE_INSTALL_LIBDIR=lib
+          cmake -S . -B out/build/ci -G "${{ matrix.generator }}"
+          -DCMAKE_BUILD_TYPE=Release -DCHESS_DEPLOY_RUNTIME=ON
           ${{ runner.os == 'Windows' && '-A x64' || '' }}
-
       - name: Build
         run: cmake --build out/build/ci --config Release --parallel 2
-
       - name: Test
         run: ctest --test-dir out/build/ci -C Release --output-on-failure --no-tests=error
-
-      - name: Package executable and runtime libraries
+      - name: Package executable
         run: cmake --install out/build/ci --config Release --prefix "${{ github.workspace }}/out/package/Chess"
-
-      - name: Remove duplicate Linux library aliases
-        if: runner.os == 'Linux'
-        run: |
-          python .github/scripts/test-deduplicate-linux-package.py
-          python .github/scripts/deduplicate-linux-package.py out/package/Chess
-
-      - name: Smoke test packaged application (Windows)
+      - name: Smoke test installed application (Windows)
         if: runner.os == 'Windows'
         run: python .github/scripts/smoke-package.py out/package/Chess/bin/Chess.exe
-
-      - name: Smoke test packaged application (Linux desktop)
+      - name: Smoke test installed application (Linux desktop)
         if: runner.os == 'Linux'
-        run: xvfb-run -a python .github/scripts/smoke-package.py out/package/Chess/bin/Chess --platform xcb
-
-      - name: Upload executable package
-        uses: actions/upload-artifact@v6
+        run: SDL_VIDEODRIVER=x11 xvfb-run -a python .github/scripts/smoke-package.py out/package/Chess/bin/Chess
+      - uses: actions/upload-artifact@v6
         with:
           name: Chess-${{ matrix.platform }}-x64
           path: out/package/

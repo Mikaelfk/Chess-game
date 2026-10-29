@@ -383,3 +383,15 @@ Chess
 *.a
 CTestTestfile.cmake
 .vscode
+
+# SDL/ImGui and Android generated files
+/Android/.gradle/
+/Android/.cxx/
+/Android/app/.cxx/
+/Android/app/build/
+/Android/build/
+/Android/local.properties
+chess-smoke.bmp
+imgui.ini
+
+chess-replay-smoke.bmp
