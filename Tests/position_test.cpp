@@ -81,7 +81,71 @@ void testCheckAndBlockingMove() {
     require(!p.inCheck(false) && !p.inCheck(true), "Blocking move did not remove check");
 }
 
+void testInsufficientMaterial() {
+    require(empty().insufficientMaterial(), "Bare kings must draw");
+    for (int minor : std::array<int, 4>{Bishop, Knight, Bishop + 6, Knight + 6}) {
+        auto p = empty();
+        p.squares[4][4] = minor;
+        require(p.insufficientMaterial() && p.outcome() == Outcome::InsufficientMaterial,
+                "King and a single minor must draw");
+    }
+    auto p = empty();
+    p.squares[4][4] = Bishop;
+    p.squares[2][2] = Bishop + 6;
+    require(p.insufficientMaterial(), "Same-colour bishops must draw");
+    p.squares[2][2] = Empty;
+    p.squares[2][3] = Bishop + 6;
+    require(!p.insufficientMaterial(), "Opposite-colour bishops can permit mate");
+    p.squares[2][3] = Knight + 6;
+    require(!p.insufficientMaterial(), "Bishop versus knight can permit mate");
+    p.squares[4][4] = Knight;
+    require(!p.insufficientMaterial(), "Two knights must not trigger an automatic material draw");
+    for (int piece : std::array<int, 6>{Pawn, Rook, Queen, Pawn + 6, Rook + 6, Queen + 6}) {
+        p = empty();
+        p.squares[4][4] = piece;
+        require(!p.insufficientMaterial(), "Pawn or major piece incorrectly caused a material draw");
+    }
+}
+
+void testDrawClockAndMatePrecedence() {
+    auto p = empty();
+    p.squares[7][0] = Rook;
+    p.halfmoveClock = 99;
+    require(p.outcome() == Outcome::Playing, "Fifty-move draw occurred before 100 halfmoves");
+    require(p.play({7,0,6,0}) && p.halfmoveClock == 100 && p.outcome() == Outcome::FiftyMoveDraw,
+            "Quiet move did not reach the fifty-move threshold");
+    p = Position::initial(); p.halfmoveClock = 99;
+    require(p.play({6,4,5,4}) && p.halfmoveClock == 0 && p.outcome() == Outcome::Playing,
+            "Pawn move did not reset the draw clock");
+    p = empty(); p.squares[4][0] = Rook; p.squares[4][3] = Bishop + 6; p.halfmoveClock = 99;
+    require(p.play({4,0,4,3}) && p.halfmoveClock == 0 && p.outcome() == Outcome::Playing,
+            "Capture did not reset the draw clock");
+    p = fromFen("k7/1Q6/2K5/8/8/8/8/8 b - -"); p.halfmoveClock = 100;
+    require(p.outcome() == Outcome::Checkmate, "Fifty-move rule hid checkmate");
+}
+
+void testRepetitionIdentity() {
+    const auto initial = Position::initial();
+    auto changed = initial; changed.whiteToMove = false;
+    require(changed.repetitionKey() != initial.repetitionKey(), "Repetition ignored the side to move");
+    for (int side = 0; side < 4; ++side) {
+        changed = initial; changed.castling[side] = false;
+        require(changed.repetitionKey() != initial.repetitionKey(), "Repetition ignored lost castling rights");
+    }
+    auto p = fromFen("4k3/8/8/3pP3/8/8/8/4K3 w - d6");
+    auto withoutTarget = p; withoutTarget.enPassantRow = withoutTarget.enPassantCol = -1;
+    require(has(p, {3,4,2,3}) && p.repetitionKey() != withoutTarget.repetitionKey(),
+            "Repetition ignored a legal en-passant capture");
+    p = fromFen("4k3/8/8/r4pPK/8/8/8/8 w - f6");
+    withoutTarget = p; withoutTarget.enPassantRow = withoutTarget.enPassantCol = -1;
+    require(!has(p, {3,6,2,5}) && p.repetitionKey() == withoutTarget.repetitionKey(),
+            "Pinned en-passant capture incorrectly changed repetition identity");
+}
+
 int main() {
+    testInsufficientMaterial();
+    testDrawClockAndMatePrecedence();
+    testRepetitionIdentity();
     testInitialPositionAndMoves();
     testCheckAndBlockingMove();
     Position p = Position::initial();

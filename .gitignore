@@ -363,6 +363,11 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # build outputs
+/.venv/
+*.gcda
+*.gcno
+*.gcov
+/coverage/
 CMakeFiles
 *_autogen
 .qt

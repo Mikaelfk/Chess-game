@@ -4,7 +4,42 @@
 #include <iostream>
 using namespace chess;
 void require(bool ok,const char* message) { if(!ok) {std::cerr<<message<<'\n';std::exit(1);} }
+void testTerminalPositionsAndCancellation() {
+    Position kings;
+    kings.squares[7][7] = King; kings.squares[0][0] = King + 6;
+    auto fiftyMove = kings; fiftyMove.squares[4][0] = Rook; fiftyMove.halfmoveClock = 100;
+    auto stalemate = kings; stalemate.squares[7][7] = Empty; stalemate.squares[2][2] = King;
+    stalemate.squares[2][1] = Queen; stalemate.whiteToMove = false;
+    auto checkmate = stalemate; checkmate.squares[2][1] = Empty; checkmate.squares[1][1] = Queen;
+    std::atomic_bool stop(false);
+    for (auto level : {Difficulty::Easy, Difficulty::Medium, Difficulty::Hard}) {
+        for (const auto& p : {kings, fiftyMove, stalemate, checkmate}) {
+            require(p.outcome() != Outcome::Playing, "Terminal AI test position is still playable");
+            const auto result = chooseMove(p, level, stop, 42);
+            require(!result.move && !result.whiteEvaluation && result.nodes == 0 && result.completedDepth == 0,
+                    "AI searched or suggested a move after game over");
+        }
+        stop = true;
+        const auto result = chooseMove(Position::initial(), level, stop, 42);
+        require(!result.move && !result.whiteEvaluation && result.nodes == 0 && result.completedDepth == 0,
+                "Pre-cancelled search did work or returned a move");
+        stop = false;
+    }
+}
+
+void testSeededEasyMove() {
+    const auto p = Position::initial();
+    std::atomic_bool stop(false);
+    const auto first = chooseMove(p, Difficulty::Easy, stop, 1234);
+    const auto second = chooseMove(p, Difficulty::Easy, stop, 1234);
+    require(first.move && second.move && *first.move == *second.move, "Easy move is not repeatable with the same seed");
+    require(first.nodes == 0 && first.completedDepth == 0 && !first.whiteEvaluation,
+            "Easy difficulty unexpectedly searched or reported an engine evaluation");
+}
+
 int main() {
+    testTerminalPositionsAndCancellation();
+    testSeededEasyMove();
     std::atomic_bool stop(false);
     for (bool white : {true,false}) for (Difficulty level : {Difficulty::Easy,Difficulty::Medium,Difficulty::Hard}) {
         auto p=Position::initial(); p.whiteToMove=white;

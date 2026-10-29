@@ -53,6 +53,74 @@ The GUI and AI share a copyable `chess::Position` rules engine; search never
 modifies the displayed position. Rules, sliding-piece movement, AI behaviour,
 and the application are tested against that same engine.
 
+## Tests and line coverage
+
+See the [test coverage review](docs/test-coverage.md) for measured percentages,
+missed line numbers, additional tests, and remaining gaps.
+
+Run the four CTest suites (rules, sliding pieces, AI, and the offscreen Qt
+application) after building:
+
+```sh
+ctest --test-dir <build-directory> --output-on-failure --no-tests=error
+```
+
+For line coverage, use GCC with matching `gcov`, Qt, CMake, and Python 3.10+.
+Keep this in a separate build directory so normal builds remain uninstrumented:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-coverage.txt
+cmake -S . -B out/build/coverage -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAGE=ON
+cmake --build out/build/coverage --target coverage --parallel 2
+```
+
+Open **`out/build/coverage/coverage/index.html`** in your browser and click a
+filename to see the **actual source code** with line numbers and execution counts:
+
+- **Green:** executable lines covered by the tests.
+- **Yellow:** executed lines with branches the tests did not all exercise.
+- **Red:** executable lines the tests did not cover (zero executions).
+- **Unshaded:** comments, blank lines, and other non-executable code.
+
+All source files, navigation, and styles are embedded in this single HTML file,
+so it can be opened offline or shared on its own. **Coverage is informational:**
+there is no minimum percentage, and low coverage does not fail the build or CI.
+Build errors, failing tests, and report-generation errors still fail the command.
+
+To highlight coverage directly in your editor, load
+`out/build/coverage/coverage/coverage.info` using an LCOV-compatible viewer. For
+example, open the repository in VS Code, install **Coverage Gutters**, and run
+**Coverage Gutters: Display Coverage**. If the file is not discovered automatically,
+add `coverage.info` to the extension's
+`coverage-gutters.coverageFileNames` setting. Generate coverage locally for this
+so the source paths match your checkout; downloaded CI LCOV needs source-path
+mapping in your viewer.
+
+The same directory contains a Markdown summary (`summary.md`), a text report
+with missed line numbers (`coverage.txt`), Cobertura XML (`coverage.xml`), and
+JSON totals (`summary.json`). Reports include all compiled production C++ sources
+and headers under `ChessBackend/` and `ChessApplication/`, including the entry
+point even though CTest does not execute it. Test code, generated Qt code, external
+libraries, and Python packaging scripts are outside the C++ coverage metric.
+Line coverage measures execution; it does not prove every branch or rule is correct.
+
+The `coverage` target builds the application and tests, clears old counters and
+reports, runs every suite, and generates fresh reports. Atomic counters support
+the application's background engine searches. The separate **Test coverage**
+GitHub Actions workflow generates these reports on pull requests and pushes to
+`main`. Its run summary shows per-file percentages and a **Download the source
+coverage report** link. Download **Chess-test-coverage**, extract the ZIP, and open
+`index.html` in a browser for the code with line-by-line coverage. GitHub's file
+preview does not render this HTML viewer. Reports are retained for 30 days.
+
+Additional regression tests cover minor-piece draw combinations, the 100-halfmove
+boundary and clock resets, checkmate taking precedence over the fifty-move rule,
+castling and legal en-passant rights in repetition identity, terminal/cancelled
+AI searches, and repeatable seeded Easy moves. Existing perft and GUI tests remain
+essential even when their lines are already covered.
+
 ## How to run the application
 
 ### Linux

@@ -1,0 +1,78 @@
+name: Test coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install coverage and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0
+          python -m pip install -r requirements-coverage.txt
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: linux_gcc_64
+          cache: true
+
+      - name: Configure coverage build
+        run: cmake -S . -B out/build/coverage -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAGE=ON
+
+      - name: Run tests and generate coverage reports
+        run: cmake --build out/build/coverage --target coverage --parallel 2
+
+      - name: Upload source coverage report
+        id: coverage-report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: Chess-test-coverage
+          path: out/build/coverage/coverage/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Show coverage summary and source viewer instructions
+        if: always()
+        shell: bash
+        env:
+          COVERAGE_ARTIFACT_URL: ${{ steps.coverage-report.outputs.artifact-url }}
+        run: |
+          if [ -f out/build/coverage/coverage/summary.md ]; then
+            cat out/build/coverage/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+            cat >> "$GITHUB_STEP_SUMMARY" <<'MARKDOWN'
+
+          ### Browse the actual source code
+
+          Download **Chess-test-coverage**, extract the ZIP, and open **index.html**
+          in your browser. Click a filename to view its source: green lines were
+          covered, yellow lines ran with some branches missed, red lines were not
+          covered, and unshaded lines are non-executable.
+          The execution count beside each line shows how often it ran.
+          All source files and styles are embedded in this one HTML file; it works offline.
+
+          For editor coverage highlighting, load **coverage.info** using an LCOV viewer
+          and map the CI source paths to your local checkout, or generate coverage locally.
+          MARKDOWN
+            if [ -n "$COVERAGE_ARTIFACT_URL" ]; then
+              printf '\n[Download the source coverage report](%s)\n' "$COVERAGE_ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
