@@ -74,6 +74,38 @@ int main(int argc, char** argv) {
         QTest::qWait(20);
     }
     require(game.position().squares[4][4] == chess::Pawn, "Rotated mobile tap coordinates are incorrect");
+    QTest::qWait(250);
+    auto* evaluation = window->findChild<QQuickItem*>("replayEvaluation");
+    require(evaluation && !evaluation->isVisible(), "Evaluation must be hidden during live games");
+    for (bool white : {true, false}) {
+        game.newGame(white, false, 0); QTest::qWait(30);
+        const auto from = squareCenter(window, 52);
+        const auto illegal = squareCenter(window, 28);
+        QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, from);
+        QTest::mouseMove(window, illegal, 30);
+        QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, illegal);
+        require(game.replayLength() == 0, "Illegal drag changed the position");
+        const auto to = squareCenter(window, 36);
+        QTest::touchEvent(window, touch).press(0, from, window);
+        QTest::touchEvent(window, touch).move(0, to, window);
+        QTest::qWait(30);
+        QTest::touchEvent(window, touch).release(0, to, window);
+        require(game.position().squares[4][4] == chess::Pawn, "Touch drag failed on rotated or normal board");
+        QTest::qWait(250);
+    }
+    game.newGame(true, false, 0);
+    for (auto pair : {std::pair{53,45}, std::pair{12,28}, std::pair{54,38}, std::pair{3,39}}) {
+        game.selectSquare(pair.first); game.selectSquare(pair.second);
+    }
+    QTest::qWait(250);
+    game.startReplay(); QTest::qWait(30);
+    require(evaluation->isVisible(), "Replay evaluation is missing");
+    for (int i = 0; i < 100 && !game.evaluationText().contains("engine"); ++i) QTest::qWait(50);
+    require(game.evaluationText().contains("engine"), "Replay engine evaluation never arrived");
+    game.seekReplay(game.replayLength());
+    require(game.evaluation() == 0 && game.evaluationText().contains("checkmate"), "Replay checkmate evaluation is incorrect");
+    game.exitReplay(); QTest::qWait(30);
+    require(!evaluation->isVisible(), "Replay evaluation remained on the live board");
     auto* newGame = window->findChild<QQuickItem*>("newGameButton");
     require(newGame, "Mobile new-game control is missing");
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,

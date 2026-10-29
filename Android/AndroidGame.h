@@ -12,6 +12,8 @@
 class AndroidGame : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantList board READ board NOTIFY stateChanged)
+    Q_PROPERTY(double evaluation READ evaluation NOTIFY evaluationChanged)
+    Q_PROPERTY(QString evaluationText READ evaluationText NOTIFY evaluationChanged)
     Q_PROPERTY(QString status READ status NOTIFY stateChanged)
     Q_PROPERTY(QString result READ result NOTIFY stateChanged)
     Q_PROPERTY(bool thinking READ thinking NOTIFY stateChanged)
@@ -29,6 +31,8 @@ public:
     explicit AndroidGame(const QString& stateFile = {}, QObject* parent = nullptr);
     ~AndroidGame() override;
     QVariantList board() const;
+    double evaluation() const { return evaluationValue; }
+    QString evaluationText() const { return evaluationLabel; }
     QString status() const;
     QString result() const;
     QString material() const;
@@ -46,6 +50,7 @@ public:
     QByteArray savedState() const;
     bool restoreState(const QByteArray& data);
 
+    Q_INVOKABLE bool beginDrag(int index);
     Q_INVOKABLE void selectSquare(int index);
     Q_INVOKABLE void promote(int piece);
     Q_INVOKABLE void cancelPromotion();
@@ -56,8 +61,14 @@ public:
     void setApplicationActive(bool active);
 signals:
     void stateChanged();
+    void evaluationChanged();
     void moveMade(int from, int to, int rookFrom, int rookTo);
 private:
+    double evaluationValue = 0.5;
+    QString evaluationLabel = "Equal material";
+    std::string evaluationKey;
+    std::shared_ptr<std::atomic_bool> evaluationCancelled;
+    void updateEvaluation();
     chess::Position current = chess::Position::initial();
     std::vector<chess::Position> history;
     std::vector<chess::Move> moves;

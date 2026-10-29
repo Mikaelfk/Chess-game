@@ -109,7 +109,7 @@ ApplicationWindow {
                                 anchors.centerIn: parent
                                 width: parent.width * 0.86
                                 height: width
-                                visible: !window.isMoving(modelData.index)
+                                visible: !window.isMoving(modelData.index) && !(boardInput.dragging && boardInput.origin === modelData.index)
                                 source: modelData.image
                                 fillMode: Image.PreserveAspectFit
                                 smooth: true
@@ -142,12 +142,56 @@ ApplicationWindow {
                                 font.pixelSize: 10
                                 color: "#223b30"
                             }
-                            MouseArea {
-                                anchors.fill: parent
-                                enabled: !window.movingPieces.length && !game.thinking && !game.replaying && !game.promotionPending && !game.gameOver
-                                onClicked: game.selectSquare(modelData.index)
-                            }
+
                         }
+                    }
+                }
+                MouseArea {
+                    id: boardInput
+                    anchors.fill: board
+                    preventStealing: true
+                    enabled: !window.movingPieces.length && !game.thinking && !game.replaying && !game.promotionPending && !game.gameOver
+                    property int origin: -1
+                    property point start
+                    property bool dragging: false
+                    property string pieceImage: ""
+                    function squareAt(px, py) {
+                        if (px < 0 || py < 0 || px >= width || py >= height) return -1
+                        const screen = Math.floor(py / (height / 8)) * 8 + Math.floor(px / (width / 8))
+                        return game.humanWhite ? screen : 63 - screen
+                    }
+                    onPressed: function(mouse) {
+                        start = Qt.point(mouse.x, mouse.y)
+                        origin = squareAt(mouse.x, mouse.y)
+                        dragging = false
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (!pressed || dragging || origin < 0) return
+                        if (Math.hypot(mouse.x - start.x, mouse.y - start.y) < 8) return
+                        const screen = game.humanWhite ? origin : 63 - origin
+                        pieceImage = game.board[screen].image
+                        dragging = game.beginDrag(origin)
+                    }
+                    onReleased: function(mouse) {
+                        const target = squareAt(mouse.x, mouse.y)
+                        const wasDragging = dragging
+                        dragging = false
+                        if (!wasDragging) {
+                            if (target === origin) game.selectSquare(target)
+                        } else if (target >= 0) {
+                            const screen = game.humanWhite ? target : 63 - target
+                            if (game.board[screen].legal) game.selectSquare(target)
+                        }
+                        origin = -1
+                    }
+                    onCanceled: { dragging = false; origin = -1 }
+                    Image {
+                        visible: boardInput.dragging
+                        source: boardInput.pieceImage
+                        width: board.width / 8 * 0.86
+                        height: width
+                        x: boardInput.mouseX - width / 2
+                        y: boardInput.mouseY - height / 2
                     }
                 }
                 Item {
@@ -173,12 +217,31 @@ ApplicationWindow {
                     }
                 }
             }
+            ColumnLayout {
+                visible: game.replaying
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                ProgressBar {
+                    objectName: "replayEvaluation"
+                    Layout.fillWidth: true
+                    from: 0; to: 1; value: game.evaluation
+                    Accessible.name: "Replay evaluation: " + game.evaluationText
+                    background: Rectangle { implicitHeight: 12; color: "#222222"; radius: 3 }
+                    contentItem: Item {
+                        implicitHeight: 12
+                        Rectangle { width: parent.width * game.evaluation; height: parent.height; color: "#f3e9d7"; radius: 3 }
+                    }
+                }
+                Label { Layout.fillWidth: true; text: game.evaluationText; color: "#f3e9d7"; wrapMode: Text.WordWrap }
+                Label { Layout.fillWidth: true; text: "White / Black · Engine advantage, not win probability"; color: "#bdc9bf"; wrapMode: Text.WordWrap; font.pixelSize: 11 }
+            }
             Label {
                 Layout.fillWidth: true
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
                 text: game.replaying ? "Recorded game · " + (game.humanWhite ? "White" : "Black") + " at the bottom"
-                                     : "Tap a piece, then a highlighted square to move."
+                                     : "Tap or drag a piece to a highlighted square."
                 color: "#bdc9bf"
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap

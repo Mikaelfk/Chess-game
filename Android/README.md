@@ -1,7 +1,7 @@
 # Android application
 
 The Android app shares `ChessBackend` rules and AI with the desktop game. Its Qt
-Quick interface supports tap-to-move play, legal-move and capture hints, check
+Quick interface supports tap-to-move and drag-to-move play, legal-move and capture hints, check
 highlights, all three AI difficulties, either side, local two-player games, all
 promotion choices, game results, and replay with automatic playback. The board
 scales to the screen and the page scrolls on short or landscape displays.
@@ -11,9 +11,12 @@ private storage. Reopening the app restores the game, repetition history, and
 replay. Backgrounding the app cancels AI work; returning resumes the computer's
 turn. Starting a new game replaces the saved game. Play works offline.
 
-The mobile interface uses tapping rather than desktop drag gestures. Replay
-reviews the recorded game; the desktop's replay analysis variations and engine
-evaluation panel are not part of this mobile interface.
+Drag a piece onto a highlighted square to move; illegal or off-board drops return
+it to its original square. Replay includes a White/Black evaluation bar and an
+engine score in pawn units, with material balance shown while analysis runs.
+Evaluation is shown only during replay and is not a win probability. Analysis
+uses the displayed position and does not account for repetition history. The
+desktop's replay analysis variations are not part of this mobile interface.
 
 ## Install a test APK
 

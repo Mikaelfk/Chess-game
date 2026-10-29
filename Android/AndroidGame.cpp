@@ -12,9 +12,11 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include <algorithm>
 #include <random>
+#include <cmath>
 
 AndroidGame::AndroidGame(const QString& stateFile, QObject* parent)
     : QObject(parent), stateFile(stateFile) {
+    connect(this, &AndroidGame::stateChanged, this, &AndroidGame::updateEvaluation);
     history = {current};
     repetitions[current.repetitionKey()] = 1;
     if (!stateFile.isEmpty()) {
@@ -22,9 +24,10 @@ AndroidGame::AndroidGame(const QString& stateFile, QObject* parent)
         if (file.open(QIODevice::ReadOnly) && !restoreState(file.readAll()))
             storageError = "The saved game could not be loaded. A new game is ready.";
     }
+    updateEvaluation();
 }
 
-AndroidGame::~AndroidGame() { cancelSearch(); }
+AndroidGame::~AndroidGame() { cancelSearch(); if (evaluationCancelled) evaluationCancelled->store(true); }
 
 const chess::Position& AndroidGame::displayedPosition() const {
     return replay ? history[replayStep] : current;
@@ -96,6 +99,57 @@ QString AndroidGame::material() const {
     for (const auto& row : displayedPosition().squares) for (int piece : row)
         if (piece) balance += (chess::isWhite(piece) ? 1 : -1) * values[chess::kind(piece)];
     return balance == 0 ? "Equal material" : QString("%1 +%2").arg(balance > 0 ? "White" : "Black").arg(std::abs(balance));
+}
+
+bool AndroidGame::beginDrag(int index) {
+    if (!inputAllowed() || index < 0 || index >= 64) return false;
+    const int piece = current.squares[index / 8][index % 8];
+    if (!piece || chess::isWhite(piece) != current.whiteToMove) return false;
+    selected = index;
+    emit stateChanged();
+    return true;
+}
+
+void AndroidGame::updateEvaluation() {
+    const auto snapshot = displayedPosition();
+    const bool finished = replay ? snapshot.outcome() != chess::Outcome::Playing : gameOver();
+    const auto key = snapshot.repetitionKey() + (finished ? "finished" : "playing");
+    if (!active || !replay) {
+        if (evaluationCancelled) evaluationCancelled->store(true);
+        evaluationKey.clear();
+        return;
+    }
+    if (key == evaluationKey) return;
+    evaluationKey = key;
+    if (evaluationCancelled) evaluationCancelled->store(true);
+    evaluationCancelled = std::make_shared<std::atomic_bool>(false);
+    const auto token = evaluationCancelled;
+    int balance = 0;
+    constexpr int values[] = {0, 1, 3, 3, 5, 9, 0};
+    for (const auto& row : snapshot.squares) for (int piece : row)
+        if (piece) balance += (chess::isWhite(piece) ? 1 : -1) * values[chess::kind(piece)];
+    evaluationValue = std::clamp(0.5 + balance * 0.025, 0.0, 1.0);
+    evaluationLabel = material() + " (material)";
+    if (finished) {
+        const bool mate = snapshot.outcome() == chess::Outcome::Checkmate;
+        evaluationValue = mate ? (snapshot.whiteToMove ? 0.0 : 1.0) : 0.5;
+        evaluationLabel = mate ? (snapshot.whiteToMove ? "Black wins — checkmate" : "White wins — checkmate") : "Draw";
+    }
+    emit evaluationChanged();
+    if (finished) return;
+    auto* watcher = new QFutureWatcher<chess::SearchResult>(this);
+    connect(watcher, &QFutureWatcher<chess::SearchResult>::finished, this, [this, watcher, token] {
+        const auto result = watcher->result(); watcher->deleteLater();
+        if (token->load() || !result.whiteEvaluation) return;
+        const int score = *result.whiteEvaluation;
+        evaluationValue = 0.5 + 0.5 * std::tanh(score / 600.0);
+        evaluationLabel = std::abs(score) > 90000 ? (score > 0 ? "White — forced mate" : "Black — forced mate")
+            : score == 0 ? "Equal (engine)" : QString("%1 +%2 (engine)").arg(score > 0 ? "White" : "Black").arg(std::abs(score) / 100.0, 0, 'f', 2);
+        emit evaluationChanged();
+    });
+    watcher->setFuture(QtConcurrent::run([snapshot, token] {
+        return chess::chooseMove(snapshot, chess::Difficulty::Medium, *token, 42);
+    }));
 }
 
 void AndroidGame::selectSquare(int index) {
