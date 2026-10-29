@@ -58,8 +58,9 @@ and the application are tested against that same engine.
 See the [test coverage review](docs/test-coverage.md) for measured percentages,
 missed line numbers, additional tests, and remaining gaps.
 
-Run the four CTest suites (rules, sliding pieces, AI, and the offscreen Qt
-application) after building:
+Run the CTest suites (rules, sliding pieces, AI, the offscreen desktop application,
+and the mobile game controller) after building. The optional mobile preview also
+adds a QML touch and layout test:
 
 ```sh
 ctest --test-dir <build-directory> --output-on-failure --no-tests=error
@@ -101,7 +102,7 @@ mapping in your viewer.
 The same directory contains a Markdown summary (`summary.md`), a text report
 with missed line numbers (`coverage.txt`), Cobertura XML (`coverage.xml`), and
 JSON totals (`summary.json`). Reports include all compiled production C++ sources
-and headers under `ChessBackend/` and `ChessApplication/`, including the entry
+and headers under `ChessBackend/`, `ChessApplication/`, and `Android/`, including the entry
 point even though CTest does not execute it. Test code, generated Qt code, external
 libraries, and Python packaging scripts are outside the C++ coverage metric.
 Line coverage measures execution; it does not prove every branch or rule is correct.
@@ -122,6 +123,14 @@ AI searches, and repeatable seeded Easy moves. Existing perft and GUI tests rema
 essential even when their lines are already covered.
 
 ## How to run the application
+
+### Android
+
+The [Android application](Android/README.md) provides a phone interface with
+tap-to-move play, AI, local two-player games, automatic game saving, and replay.
+The **Android** workflow builds installable test APKs for Android 9+ ARM64 phones
+and x86_64 emulators. See the Android guide for download, installation, build,
+and testing instructions.
 
 ### Linux
 cmake and Qt 6.3.0 or newer is required. If running older Qt version remove ```qt_standard_project_setup()``` from [CMakeLists.txt](CMakeLists.txt) and it *might* work.

@@ -12,7 +12,14 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Gui Concurrent)
+option(CHESS_BUILD_MOBILE_PREVIEW "Build the Android interface as a desktop preview" OFF)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Concurrent)
+if(ANDROID OR CHESS_BUILD_MOBILE_PREVIEW)
+    find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2)
+endif()
+if(NOT ANDROID)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+endif()
 qt_standard_project_setup()
 
 option(CHESS_ENABLE_COVERAGE "Instrument tests and generate GCC line coverage reports" OFF)
@@ -27,8 +34,19 @@ add_library(chess_engine
     ChessBackend/ChessAI.cpp
     ChessBackend/ChessAI.h
 )
+set_target_properties(chess_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(CHESS_ENABLE_COVERAGE)
     target_link_libraries(chess_engine PUBLIC chess_coverage)
+endif()
+
+add_library(chess_mobile Android/AndroidGame.cpp Android/AndroidGame.h)
+target_link_libraries(chess_mobile PUBLIC chess_engine Qt6::Core Qt6::Concurrent)
+if(ANDROID OR CHESS_BUILD_MOBILE_PREVIEW)
+    add_subdirectory(Android)
+endif()
+if(ANDROID)
+    # Native CTest executables and desktop runtime deployment do not apply to APKs.
+    return()
 endif()
 
 # Main executable
@@ -45,6 +63,23 @@ set_target_properties(Chess PROPERTIES
 )
 
 enable_testing()
+
+if(CHESS_BUILD_MOBILE_PREVIEW)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    add_executable(mobile_ui_test Tests/mobile_ui_test.cpp
+        Android/mobile.qrc ChessApplication/Images/images.qrc)
+    target_link_libraries(mobile_ui_test PRIVATE chess_mobile Qt6::Quick Qt6::QuickControls2 Qt6::Test)
+    add_test(NAME Mobile_UI_Test COMMAND mobile_ui_test)
+    set_tests_properties(Mobile_UI_Test PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software"
+        TIMEOUT 20
+    )
+endif()
+
+add_executable(mobile_game_test Tests/mobile_game_test.cpp)
+target_link_libraries(mobile_game_test PRIVATE chess_mobile)
+add_test(NAME Mobile_Game_Test COMMAND mobile_game_test)
+set_tests_properties(Mobile_Game_Test PROPERTIES TIMEOUT 20)
 
 add_executable(position_test Tests/position_test.cpp)
 target_link_libraries(position_test PRIVATE chess_engine)

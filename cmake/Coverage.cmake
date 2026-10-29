@@ -38,7 +38,7 @@ function(chess_add_coverage_target)
             --xml "${report_dir}/coverage.xml"
             --json-summary "${report_dir}/summary.json"
             --print-summary "${CMAKE_BINARY_DIR}"
-        DEPENDS Chess position_test sliding_piece_test ai_test application_test
+        DEPENDS Chess position_test sliding_piece_test ai_test application_test mobile_game_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         COMMENT "Run all tests and report production line coverage"
         USES_TERMINAL
