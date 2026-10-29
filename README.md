@@ -85,10 +85,9 @@ filename to see the **actual source code** with line numbers and execution count
 - **Unshaded:** comments, blank lines, and other non-executable code.
 
 All source files, navigation, and styles are embedded in this single HTML file,
-so it can be opened offline or shared on its own. The report title shows the
-**95% total production line coverage goal**. Coverage below this goal fails the
-command and CI. Change it explicitly at configure time with, for example,
-`-DCHESS_COVERAGE_MINIMUM=98`.
+so it can be opened offline or shared on its own. **Coverage is informational:**
+there is no minimum percentage, and low coverage does not fail the build or CI.
+Build errors, failing tests, and report-generation errors still fail the command.
 
 To highlight coverage directly in your editor, load
 `out/build/coverage/coverage/coverage.info` using an LCOV-compatible viewer. For
@@ -110,12 +109,11 @@ Line coverage measures execution; it does not prove every branch or rule is corr
 The `coverage` target builds the application and tests, clears old counters and
 reports, runs every suite, and generates fresh reports. Atomic counters support
 the application's background engine searches. The separate **Test coverage**
-GitHub Actions workflow checks the same goal on pull requests and pushes to
+GitHub Actions workflow generates these reports on pull requests and pushes to
 `main`. Its run summary shows per-file percentages and a **Download the source
 coverage report** link. Download **Chess-test-coverage**, extract the ZIP, and open
 `index.html` in a browser for the code with line-by-line coverage. GitHub's file
-preview does not render this HTML viewer. Reports
-are retained for 30 days, including reports from runs that miss the coverage goal.
+preview does not render this HTML viewer. Reports are retained for 30 days.
 
 Additional regression tests cover minor-piece draw combinations, the 100-halfmove
 boundary and clock resets, checkmate taking precedence over the fifty-move rule,

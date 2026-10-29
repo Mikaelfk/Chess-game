@@ -4,7 +4,7 @@ Measured with GCC 14.2, gcovr 8.4, and a Debug coverage build. All four CTest
 suites pass with and without instrumentation. These numbers are a snapshot;
 regenerate reports using the [coverage instructions](../README.md#tests-and-line-coverage).
 
-**Goal: at least 95% total production line coverage, enforced locally and in CI.**
+**Coverage is informational, with no minimum percentage enforced locally or in CI.**
 Current result: **834/856 lines (97.4%)**. Before the additional regression tests,
 the same build covered 833/856 lines (97.3%).
 
@@ -53,7 +53,7 @@ The application entry point is included as uncovered because CTest launches the
 test application; the existing package smoke test exercises executable startup
 separately without contributing to this report.
 
-Reported branch coverage is 61.9%; the 95% gate applies to lines only. Branch
+Reported branch coverage is 61.9%; no coverage percentage is enforced. Branch
 counts include compiler-generated C++/Qt paths and should be reviewed separately.
 The HTML report provides per-line execution counts and branch details. Neither
 metric replaces assertions about correct behavior.

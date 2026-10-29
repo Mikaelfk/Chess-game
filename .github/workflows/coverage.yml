@@ -37,7 +37,7 @@ jobs:
       - name: Configure coverage build
         run: cmake -S . -B out/build/coverage -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAGE=ON
 
-      - name: Run tests and enforce coverage goal
+      - name: Run tests and generate coverage reports
         run: cmake --build out/build/coverage --target coverage --parallel 2
 
       - name: Upload source coverage report
