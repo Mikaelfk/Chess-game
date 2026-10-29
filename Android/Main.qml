@@ -16,6 +16,8 @@ ApplicationWindow {
     Material.primary: "#243a30"
     property bool autoPlaying: false
     property var movingPieces: []
+    property bool droppingPiece: false
+    property bool draggedPromotion: false
     function isMoving(square) {
         return movingPieces.some(function(piece) { return piece.to === square })
     }
@@ -180,7 +182,12 @@ ApplicationWindow {
                             if (target === origin) game.selectSquare(target)
                         } else if (target >= 0) {
                             const screen = game.humanWhite ? target : 63 - target
-                            if (game.board[screen].legal) game.selectSquare(target)
+                            if (game.board[screen].legal) {
+                                window.droppingPiece = true
+                                game.selectSquare(target)
+                                window.draggedPromotion = game.promotionPending
+                                window.droppingPiece = false
+                            }
                         }
                         origin = -1
                     }
@@ -310,7 +317,7 @@ ApplicationWindow {
             side.currentIndex = game.humanWhite ? 0 : 1
             difficulty.currentIndex = game.difficulty
         }
-        onAccepted: { window.movingPieces = []; game.newGame(side.currentIndex === 0, opponent.currentIndex === 0, difficulty.currentIndex) }
+        onAccepted: { window.draggedPromotion = false; window.movingPieces = []; game.newGame(side.currentIndex === 0, opponent.currentIndex === 0, difficulty.currentIndex) }
         ColumnLayout {
             width: parent.width
             Label { text: "Opponent" }
@@ -336,13 +343,16 @@ ApplicationWindow {
                 model: [{name: "Queen", kind: 5}, {name: "Rook", kind: 4}, {name: "Bishop", kind: 3}, {name: "Knight", kind: 2}]
                 Button { required property var modelData; Layout.fillWidth: true; text: modelData.name; onClicked: game.promote(modelData.kind) }
             }
-            Button { Layout.fillWidth: true; text: "Cancel"; onClicked: game.cancelPromotion() }
+            Button { Layout.fillWidth: true; text: "Cancel"; onClicked: { window.draggedPromotion = false; game.cancelPromotion() } }
         }
     }
 
     Connections {
         target: game
-        function onMoveMade(from, to, rookFrom, rookTo) { window.animateMove(from, to, rookFrom, rookTo) }
+        function onMoveMade(from, to, rookFrom, rookTo) {
+            if (!window.droppingPiece && !window.draggedPromotion) window.animateMove(from, to, rookFrom, rookTo)
+            window.draggedPromotion = false
+        }
         function onStateChanged() {
             if (game.promotionPending) promotion.open()
             else promotion.close()

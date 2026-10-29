@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Qt 6.8 lays out content in the window's available area. Keep system
+         bars opaque and outside that area instead of drawing beneath them. -->
+    <style name="ChessBaseTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">#17241f</item>
+        <item name="android:navigationBarColor">#17241f</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">never</item>
+    </style>
+    <style name="ChessTheme" parent="ChessBaseTheme" />
+</resources>

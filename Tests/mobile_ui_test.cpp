@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 100 && game.thinking(); ++i) QTest::qWait(50);
     require(!game.thinking() && game.replayLength() == 2, "Computer did not reply");
     require(board->mapToScene(QPointF()) == boardPosition, "Board shifted after computer reply");
+    require(visualItem(window->contentItem(), "movingPiece"), "Computer reply must still animate");
     QTest::qWait(250);
     game.newGame(false, false, 0); QTest::qWait(20);
     for (int square : {52, 36}) {
@@ -91,8 +92,24 @@ int main(int argc, char** argv) {
         QTest::qWait(30);
         QTest::touchEvent(window, touch).release(0, to, window);
         require(game.position().squares[4][4] == chess::Pawn, "Touch drag failed on rotated or normal board");
+        require(!visualItem(window->contentItem(), "movingPiece"), "Drag drop replayed the move animation");
         QTest::qWait(250);
     }
+    game.newGame(true, false, 0);
+    for (auto pair : {std::pair{48,32}, {15,31}, {32,24}, {31,39}, {24,16}, {39,47}, {16,9}, {47,54}}) {
+        game.selectSquare(pair.first); game.selectSquare(pair.second);
+    }
+    QTest::qWait(250);
+    const auto promotionFrom = squareCenter(window, 9);
+    const auto promotionTo = squareCenter(window, 0);
+    QTest::touchEvent(window, touch).press(0, promotionFrom, window);
+    QTest::touchEvent(window, touch).move(0, promotionTo, window);
+    QTest::qWait(30);
+    QTest::touchEvent(window, touch).release(0, promotionTo, window);
+    require(game.promotionPending(), "Dragged promotion did not open the choice");
+    game.promote(chess::Queen);
+    require(game.position().squares[0][0] == chess::Queen, "Dragged promotion did not complete");
+    require(!visualItem(window->contentItem(), "movingPiece"), "Dragged promotion replayed its animation");
     game.newGame(true, false, 0);
     for (auto pair : {std::pair{53,45}, std::pair{12,28}, std::pair{54,38}, std::pair{3,39}}) {
         game.selectSquare(pair.first); game.selectSquare(pair.second);
