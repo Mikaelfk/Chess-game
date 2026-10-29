@@ -53,6 +53,57 @@ The GUI and AI share a copyable `chess::Position` rules engine; search never
 modifies the displayed position. Rules, sliding-piece movement, AI behaviour,
 and the application are tested against that same engine.
 
+## Tests and line coverage
+
+See the [test coverage review](docs/test-coverage.md) for measured percentages,
+missed line numbers, additional tests, and remaining gaps.
+
+Run the four CTest suites (rules, sliding pieces, AI, and the offscreen Qt
+application) after building:
+
+```sh
+ctest --test-dir <build-directory> --output-on-failure --no-tests=error
+```
+
+For line coverage, use GCC with matching `gcov`, Qt, CMake, and Python 3.10+.
+Keep this in a separate build directory so normal builds remain uninstrumented:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-coverage.txt
+cmake -S . -B out/build/coverage -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAGE=ON
+cmake --build out/build/coverage --target coverage --parallel 2
+```
+
+Open **`out/build/coverage/coverage/index.html`** and click a filename to see
+covered lines, execution counts, and missed lines. The report title shows the
+**95% total production line coverage goal**. Coverage below this goal fails the
+command and CI. Change it explicitly at configure time with, for example,
+`-DCHESS_COVERAGE_MINIMUM=98`.
+
+The same directory contains a Markdown summary (`summary.md`), a text report
+with missed line numbers (`coverage.txt`), Cobertura XML (`coverage.xml`), and
+JSON totals (`summary.json`). Reports include all compiled production C++ sources
+and headers under `ChessBackend/` and `ChessApplication/`, including the entry
+point even though CTest does not execute it. Test code, generated Qt code, external
+libraries, and Python packaging scripts are outside the C++ coverage metric.
+Line coverage measures execution; it does not prove every branch or rule is correct.
+
+The `coverage` target builds the application and tests, clears old counters and
+reports, runs every suite, and generates fresh reports. Atomic counters support
+the application's background engine searches. The separate **Test coverage**
+GitHub Actions workflow checks the same goal on pull requests and pushes to
+`main`. Its run summary shows per-file percentages; download **Chess-test-coverage**
+from the run's Artifacts and open `index.html` for line-by-line detail. Reports
+are retained for 30 days, including reports from runs that miss the coverage goal.
+
+Additional regression tests cover minor-piece draw combinations, the 100-halfmove
+boundary and clock resets, checkmate taking precedence over the fifty-move rule,
+castling and legal en-passant rights in repetition identity, terminal/cancelled
+AI searches, and repeatable seeded Easy moves. Existing perft and GUI tests remain
+essential even when their lines are already covered.
+
 ## How to run the application
 
 ### Linux

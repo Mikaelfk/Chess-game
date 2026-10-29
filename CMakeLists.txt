@@ -15,6 +15,11 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Gui Concurrent)
 qt_standard_project_setup()
 
+option(CHESS_ENABLE_COVERAGE "Instrument tests and generate GCC line coverage reports" OFF)
+if(CHESS_ENABLE_COVERAGE)
+    include(cmake/Coverage.cmake)
+endif()
+
 # Shared rules and AI search used by the application and tests.
 add_library(chess_engine
     ChessBackend/Position.cpp
@@ -22,6 +27,9 @@ add_library(chess_engine
     ChessBackend/ChessAI.cpp
     ChessBackend/ChessAI.h
 )
+if(CHESS_ENABLE_COVERAGE)
+    target_link_libraries(chess_engine PUBLIC chess_coverage)
+endif()
 
 # Main executable
 qt_add_executable (Chess "ChessApplication/main.cpp" "ChessApplication/ChessApplication.h" "ChessApplication/ChessApplication.cpp" "ChessApplication/ChessApplication.ui" "ChessApplication/Images/images.qrc")
@@ -64,6 +72,10 @@ set_tests_properties(Application_Test PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     TIMEOUT 45
 )
+
+if(CHESS_ENABLE_COVERAGE)
+    chess_add_coverage_target()
+endif()
 
 # Keep normal developer builds compatible with Qt 6.3. Packaging uses Qt 6.5+.
 include(GNUInstallDirs)
