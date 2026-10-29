@@ -368,6 +368,9 @@ FodyWeavers.xsd
 *.gcno
 *.gcov
 /coverage/
+*.apk
+*.aab
+/Android/package/local.properties
 CMakeFiles
 *_autogen
 .qt
