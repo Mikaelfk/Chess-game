@@ -12,7 +12,8 @@ public:
     float boardSize = 0;
     std::array<float, 2> captureRowY{}; // White, then Black; useful for layout checks.
     std::array<ImVec2, 5> replayButtonCenters{};
-    ImVec2 replayCloseCenter{}, replayRestoreCenter{};
+    float replayButtonSize = 0;
+    ImVec2 replayCloseCenter{}, replayRestoreCenter{}, replayEntryCenter{};
     void draw();
     int squareAt(ImVec2 point) const;
     ImVec2 squareCenter(int square) const;

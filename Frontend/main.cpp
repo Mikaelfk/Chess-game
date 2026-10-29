@@ -76,8 +76,13 @@ int main(int argc, char** argv) {
             if (androidSmoke && frames++ % 30 == 0 && !statePath.empty()) {
                 std::ofstream layout(statePath.substr(0,statePath.size()-9)+"ui-layout.json");
                 const auto origin=ui.squareCenter(52), destination=ui.squareCenter(36);
+                auto buttons=nlohmann::json::array();
+                for(auto center:ui.replayButtonCenters) buttons.push_back({center.x,center.y});
                 layout << nlohmann::json{{"width",ImGui::GetIO().DisplaySize.x},{"height",ImGui::GetIO().DisplaySize.y},
                     {"from",{origin.x,origin.y}},{"to",{destination.x,destination.y}},
+                    {"replay",game.replay},{"step",game.step},{"playing",game.playing},
+                    {"replayEntry",{ui.replayEntryCenter.x,ui.replayEntryCenter.y}},
+                    {"replayButtons",buttons},{"replayButtonSize",ui.replayButtonSize},
                     {"moves",game.recordedMoves().size()},{"e4",game.position().squares[4][4]}}.dump();
             }
             SDL_SetRenderDrawColor(renderer,23,36,31,255); SDL_RenderClear(renderer);

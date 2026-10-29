@@ -64,6 +64,10 @@ after native configuration. Only host builds include CTest executables. See the
 The workflow builds ARM64/x86_64 APKs. An API 35 emulator checks that the SDL
 surface starts below the status bar, a real `adb input swipe` plays e2-e4, the
 computer replies, and force-stop/relaunch preserve recorded moves/settings.
+It also loads a finished game, opens replay through the game-over dialog, and
+taps every transport icon at normal, narrow portrait, and short landscape sizes.
+The complete button bounds must stay inside the SDL surface after each resize;
+replay screenshots are retained with the test artifacts.
 
 ImGui draws one native surface rather than Android View widgets. The debug smoke
 launch (`--ez chess.smoke true`) writes actual board geometry to private

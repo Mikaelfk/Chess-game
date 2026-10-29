@@ -9,8 +9,9 @@ PACKAGE = 'com.mikaelfk.chess'
 ACTIVITY = f'{PACKAGE}/.ChessActivity'
 OUTPUT = Path('out/android-smoke')
 
-def adb(*args, binary=False):
-    return subprocess.run(['adb', *args], check=True, capture_output=True, text=not binary, timeout=45).stdout
+def adb(*args, binary=False, input=None):
+    return subprocess.run(['adb', *args], check=True, capture_output=True,
+                          text=not binary, input=input, timeout=45).stdout
 
 def wait_for(check, description, seconds=45):
     deadline = time.monotonic() + seconds
@@ -60,10 +61,62 @@ def main():
             raise RuntimeError('Restart did not restore the visible pawn and move history')
         if state() != recorded:
             raise RuntimeError('Restart changed the recorded game')
-        print('SDL APK renders below status bar, accepts drag, replies, and restores its game.')
+        # Load a finished recording, then enter replay through the actual modal.
+        adb('shell', 'am', 'force-stop', PACKAGE)
+        finished = {'version': 1, 'white': True, 'computer': False, 'difficulty': 0,
+                    'moves': [[6, 5, 5, 5, 5], [1, 4, 3, 4, 5],
+                              [6, 6, 4, 6, 5], [0, 3, 4, 7, 5]]}
+        adb('shell', 'run-as', PACKAGE, 'tee', 'files/game.json', input=json.dumps(finished))
+        adb('shell', 'run-as', PACKAGE, 'rm', 'files/ui-layout.json')
+        adb('shell', 'am', 'start', '-W', '-n', ACTIVITY, '--ez', 'chess.smoke', 'true')
+        def replay_entry():
+            current = state('ui-layout.json')
+            return current if current['moves'] == 4 and current['replayEntry'][1] > 0 else None
+        layout = wait_for(replay_entry, 'finished-game replay button')
+
+        def tap(current, center):
+            left, top, right, bottom = state('surface.json')
+            x, y = center
+            if not (0 <= x < current['width'] and 0 <= y < current['height']):
+                raise RuntimeError('Replay tap target is outside the SDL surface')
+            adb('shell', 'input', 'tap', str(round(left+x/current['width']*(right-left))),
+                str(round(top+y/current['height']*(bottom-top))))
+
+        tap(layout, layout['replayEntry'])
+        def replay_state(step=None, playing=None, width=None):
+            current = state('ui-layout.json')
+            if (not current['replay'] or (step is not None and current['step'] != step)
+                    or (playing is not None and current['playing'] != playing)
+                    or (width is not None and current['width'] != width)):
+                return None
+            return current
+
+        wait_for(replay_state, 'replay screen')
+        for resolution in (None, '480x640', '640x480'):
+            if resolution:
+                adb('shell', 'wm', 'size', resolution)
+            expected_width = int(resolution.split('x')[0]) if resolution else None
+            layout = wait_for(lambda: replay_state(width=expected_width), 'resized replay screen')
+            radius = layout['replayButtonSize']/2
+            for x, y in layout['replayButtons']:
+                if not (radius <= x <= layout['width']-radius
+                        and radius <= y <= layout['height']-radius):
+                    raise RuntimeError(f'Replay control is clipped at {resolution}: {layout}')
+            # Real adb taps verify hit testing as well as geometry after resize.
+            for button, step in ((0, 0), (3, 1), (1, 0), (4, 4)):
+                tap(layout, layout['replayButtons'][button])
+                layout = wait_for(lambda: replay_state(step=step), f'replay step {step}')
+            tap(layout, layout['replayButtons'][2])
+            layout = wait_for(lambda: replay_state(playing=True), 'replay playback')
+            tap(layout, layout['replayButtons'][2])
+            wait_for(lambda: replay_state(playing=False), 'replay pause')
+            (OUTPUT/f'replay-{resolution or "phone"}.png').write_bytes(
+                adb('exec-out', 'screencap', '-p', binary=True))
+        print('SDL APK respects status bar, supports drag/restoration, and keeps replay controls visible and tappable.')
     finally:
         (OUTPUT/'logcat.txt').write_text(adb('logcat', '-d', '-t', '500'))
         (OUTPUT/'phone.png').write_bytes(adb('exec-out', 'screencap', '-p', binary=True))
+        adb('shell', 'wm', 'size', 'reset')
 
 if __name__ == '__main__':
     main()

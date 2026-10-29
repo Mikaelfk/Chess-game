@@ -173,6 +173,7 @@ void ChessUI::drawReplay() {
     const float gap = ImGui::GetStyle().ItemSpacing.x;
     const float width = ImGui::GetContentRegionAvail().x;
     const float button = std::min(44.0f*scale,(width-4*gap)/5);
+    replayButtonSize = button;
     const float utility = button*.8f;
     ImGui::AlignTextToFramePadding(); ImGui::TextUnformatted("GAME REPLAY");
     ImGui::SameLine(width-button+ImGui::GetStyle().WindowPadding.x);
@@ -180,8 +181,15 @@ void ChessUI::drawReplay() {
         game.exitReplay(); resultShown = true; return;
     }
     // Only the board/analysis pane scrolls. The transport remains on screen.
-    const float footer = button+utility+3*ImGui::GetStyle().ItemSpacing.y;
-    const float paneHeight = std::max(1.0f,ImGui::GetContentRegionAvail().y-footer);
+    // Width-constrained icons can be shorter than the scaled counter text.
+    // Reserve the complete row, and anchor the footer to the viewport rather
+    // than allowing preceding content (or a resized child) to push it down.
+    const float spacing = ImGui::GetStyle().ItemSpacing.y;
+    const float counterHeight = std::max(utility,ImGui::GetFrameHeight());
+    const float footer = counterHeight+spacing+button;
+    const float footerY = ImGui::GetWindowPos().y+ImGui::GetWindowSize().y
+        -ImGui::GetStyle().WindowPadding.y-footer;
+    const float paneHeight = std::max(1.0f,footerY-spacing-ImGui::GetCursorScreenPos().y);
     ImGui::BeginChild("Replay position",{0,paneHeight},ImGuiChildFlags_None);
     auto analysisPane = [&] {
         ImGui::ProgressBar(float(game.evaluation),{-1,font+4},game.evaluationText.c_str());
@@ -196,7 +204,7 @@ void ChessUI::drawReplay() {
         drawBoard(std::max(80.0f,maxBoardHeight > 0 ? maxBoardHeight : ImGui::GetContentRegionAvail().y-bottomRow));
         drawCaptures(game.white);
     };
-    if (width > paneHeight*1.8f && width > 500*scale && ImGui::BeginTable("Replay landscape",2)) {
+    if (width > paneHeight*1.8f && width > font*16 && ImGui::BeginTable("Replay landscape",2)) {
         ImGui::TableSetupColumn("Board",ImGuiTableColumnFlags_WidthFixed,std::max(80.0f,paneHeight));
         ImGui::TableSetupColumn("Analysis",ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableNextColumn(); positionPane(paneHeight-2*(font*1.4f+4+ImGui::GetStyle().ItemSpacing.y));
@@ -207,12 +215,15 @@ void ChessUI::drawReplay() {
     if (ImGui::IsWindowHovered() && io.MouseSource == ImGuiMouseSource_TouchScreen && io.MouseDown[0] && pressed < 0 && !ImGui::IsAnyItemActive())
         ImGui::SetScrollY(ImGui::GetScrollY()-io.MouseDelta.y);
     ImGui::EndChild();
+    ImGui::SetCursorScreenPos({ImGui::GetWindowPos().x+ImGui::GetStyle().WindowPadding.x,footerY});
+    ImGui::BeginChild("Replay controls",{width,footer},ImGuiChildFlags_None,
+        ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s%d / %d",game.branchRoot?"Variation: ":"Move ",game.step,game.replayLength());
-    ImGui::SameLine(width-utility+ImGui::GetStyle().WindowPadding.x);
+    ImGui::SameLine(width-utility);
     if (iconButton("##restoreReplay","Return to recorded game",ReplayIcon::Restore,utility,replayRestoreCenter,game.branchRoot.has_value())) game.restoreRecording();
     const float toolbarWidth = button*5+gap*4;
-    ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x+std::max(0.0f,(width-toolbarWidth)/2));
+    ImGui::SetCursorPos({std::max(0.0f,(width-toolbarWidth)/2),counterHeight+spacing});
     if (iconButton("##replayFirst","First move",ReplayIcon::First,button,replayButtonCenters[0],game.step>0)) { game.playing=false; game.seek(0); }
     ImGui::SameLine();
     if (iconButton("##replayPrevious","Previous move",ReplayIcon::Previous,button,replayButtonCenters[1],game.step>0)) { game.playing=false; game.seek(game.step-1); }
@@ -225,9 +236,11 @@ void ChessUI::drawReplay() {
     if (iconButton("##replayNext","Next move",ReplayIcon::Next,button,replayButtonCenters[3],game.step<game.replayLength())) { game.playing=false; game.seek(game.step+1,true); }
     ImGui::SameLine();
     if (iconButton("##replayLast","Last move",ReplayIcon::Last,button,replayButtonCenters[4],game.step<game.replayLength())) { game.playing=false; game.seek(game.replayLength()); }
+    ImGui::EndChild();
 }
 void ChessUI::draw() {
     auto& io = ImGui::GetIO();
+    replayEntryCenter = {};
     ImGui::SetNextWindowPos({0,0}); ImGui::SetNextWindowSize(io.DisplaySize);
     if (game.replay) ImGui::SetNextWindowScroll({0,0});
     const auto replayFlags = game.replay ? ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse : 0;
@@ -244,7 +257,11 @@ void ChessUI::draw() {
         drawBoard();
         drawCaptures(game.white);
         ImGui::TextWrapped("Tap a piece and destination, or drag to a highlighted square. Escape cancels a drag.");
-        if (!game.replay && game.gameOver() && !game.recordedMoves().empty() && ImGui::Button("Replay game")) game.startReplay();
+        if (!game.replay && game.gameOver() && !game.recordedMoves().empty()) {
+            if (ImGui::Button("Replay game")) game.startReplay();
+            const auto min=ImGui::GetItemRectMin(), max=ImGui::GetItemRectMax();
+            replayEntryCenter = {(min.x+max.x)/2,(min.y+max.y)/2};
+        }
     }
     if (!game.saveError.empty()) ImGui::TextWrapped("%s",game.saveError.c_str());
     if (!game.replay && io.MouseSource == ImGuiMouseSource_TouchScreen && io.MouseDown[0] && pressed < 0 && !ImGui::IsAnyItemActive())
@@ -275,6 +292,8 @@ void ChessUI::draw() {
         if (ImGui::Button("Play again")) { game.newGame(game.white,game.computer,game.difficulty); ImGui::CloseCurrentPopup(); }
         if (ImGui::Button("View board")) ImGui::CloseCurrentPopup();
         if (ImGui::Button("Replay game")) { game.startReplay(); ImGui::CloseCurrentPopup(); }
+        const auto min=ImGui::GetItemRectMin(), max=ImGui::GetItemRectMax();
+        replayEntryCenter = {(min.x+max.x)/2,(min.y+max.y)/2};
         ImGui::EndPopup();
     }
     ImGui::End();

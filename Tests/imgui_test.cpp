@@ -24,6 +24,38 @@ bool captureIconAt(const ChessUI& ui, bool whitePlayer, int piece) {
     }
     return false;
 }
+void androidReplayLayouts() {
+    // Match main.cpp's actual font atlas and style scaling. FontGlobalScale on
+    // ImGui's default 13px font underestimates Android's 18px base text height.
+    for(float scale:{1.f,2.f,3.f,4.f}) {
+        ImGui::CreateContext(); auto& io=ImGui::GetIO(); io.IniFilename=nullptr;
+        ImFontConfig font; font.SizePixels=18*scale; io.Fonts->AddFontDefault(&font);
+        unsigned char* pixels; int width,height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels,&width,&height); io.Fonts->SetTexID(1);
+        ImGui::GetStyle().ScaleAllSizes(scale);
+        ImGui::GetStyle().TouchExtraPadding={4*scale,4*scale};
+        io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+        Game game; game.newGame(true,false,0);
+        for(auto move:{std::pair{53,45},{12,28},{54,38},{3,39}}) {
+            require(game.beginDrag(move.first),"Android replay setup failed"); game.drop(move.second);
+        }
+        game.startReplay(); ChessUI ui(game);
+        for(auto size:{ImVec2{1080,1800},ImVec2{1800,1080},ImVec2{480,640},ImVec2{640,480},ImVec2{320,400}}) {
+            io.DisplaySize=size; game.seek(0);
+            for(int i=0;i<3;++i) frame(ui,{-100,-100},false);
+            for(auto point:ui.replayButtonCenters) {
+                const float radius=ui.replayButtonSize/2;
+                require(point.x-radius>=0 && point.x+radius<=size.x
+                    && point.y-radius>=0 && point.y+radius<=size.y-ImGui::GetStyle().WindowPadding.y+.1f,
+                    "Android replay control extends beyond the visible surface");
+            }
+            const auto next=ui.replayButtonCenters[3];
+            frame(ui,next,true); frame(ui,next,false); frame(ui,next,false);
+            require(game.step==1,"Android replay Next cannot be tapped after resizing");
+        }
+        ImGui::DestroyContext();
+    }
+}
 int main() {
 try {
     ImGui::CreateContext(); auto& io=ImGui::GetIO(); io.IniFilename=nullptr;
@@ -105,6 +137,7 @@ try {
     frame(ui,{-100,-100},false);
     click(ui.replayRestoreCenter); require(!g.branchRoot && g.step==0 && g.replayLength()==4,"Restore recording icon failed");
     click(ui.replayCloseCenter); require(!g.replay,"Close replay icon failed");
-    ImGui::DestroyContext(); std::cout<<"ImGui input and layout tests passed\n";
+    ImGui::DestroyContext(); androidReplayLayouts();
+    std::cout<<"ImGui input and layout tests passed\n";
 } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
