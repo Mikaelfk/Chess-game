@@ -8,6 +8,19 @@ regenerate reports using the [coverage instructions](../README.md#tests-and-line
 Current result: **834/856 lines (97.4%)**. Before the additional regression tests,
 the same build covered 833/856 lines (97.3%).
 
+## Browse covered and uncovered code
+
+Run the `coverage` build target and open `out/build/coverage/coverage/index.html`
+in a browser. Select any filename to view its complete source with numbered lines:
+green means covered, yellow means executed with some branches missed, red means
+uncovered, and unshaded lines are non-executable.
+The execution-count column shows how often each executable line ran. The HTML
+file contains all source files and styles and works offline on its own.
+
+In GitHub Actions, use the **Download the source coverage report** link in the
+run summary, extract the ZIP, and open `index.html`. The artifact also contains
+`coverage.info` for displaying the same coverage in an LCOV-compatible editor.
+
 | Production file | Covered / total lines | Coverage | Missed lines |
 | --- | ---: | ---: | --- |
 | `ChessApplication/ChessApplication.cpp` | 618 / 632 | 97.8% | 36, 95, 97, 139–140, 158–159, 725–728, 759–761 |

@@ -37,8 +37,10 @@ function(chess_add_coverage_target)
             --root "${CMAKE_SOURCE_DIR}"
             --gcov-executable "${GCOV_EXECUTABLE}"
             --html-details "${report_dir}/index.html" --html-title "${report_title}"
+            --html-single-page js-enabled --html-self-contained
             --markdown "${report_dir}/summary.md" --markdown-title "${report_title}"
             --txt "${report_dir}/coverage.txt"
+            --lcov "${report_dir}/coverage.info" --lcov-format-1.x
             --xml "${report_dir}/coverage.xml"
             --json-summary "${report_dir}/summary.json"
             --medium-threshold-line "${CHESS_COVERAGE_MINIMUM}"

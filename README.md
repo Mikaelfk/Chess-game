@@ -76,11 +76,28 @@ cmake -S . -B out/build/coverage -DCMAKE_BUILD_TYPE=Debug -DCHESS_ENABLE_COVERAG
 cmake --build out/build/coverage --target coverage --parallel 2
 ```
 
-Open **`out/build/coverage/coverage/index.html`** and click a filename to see
-covered lines, execution counts, and missed lines. The report title shows the
+Open **`out/build/coverage/coverage/index.html`** in your browser and click a
+filename to see the **actual source code** with line numbers and execution counts:
+
+- **Green:** executable lines covered by the tests.
+- **Yellow:** executed lines with branches the tests did not all exercise.
+- **Red:** executable lines the tests did not cover (zero executions).
+- **Unshaded:** comments, blank lines, and other non-executable code.
+
+All source files, navigation, and styles are embedded in this single HTML file,
+so it can be opened offline or shared on its own. The report title shows the
 **95% total production line coverage goal**. Coverage below this goal fails the
 command and CI. Change it explicitly at configure time with, for example,
 `-DCHESS_COVERAGE_MINIMUM=98`.
+
+To highlight coverage directly in your editor, load
+`out/build/coverage/coverage/coverage.info` using an LCOV-compatible viewer. For
+example, open the repository in VS Code, install **Coverage Gutters**, and run
+**Coverage Gutters: Display Coverage**. If the file is not discovered automatically,
+add `coverage.info` to the extension's
+`coverage-gutters.coverageFileNames` setting. Generate coverage locally for this
+so the source paths match your checkout; downloaded CI LCOV needs source-path
+mapping in your viewer.
 
 The same directory contains a Markdown summary (`summary.md`), a text report
 with missed line numbers (`coverage.txt`), Cobertura XML (`coverage.xml`), and
@@ -94,8 +111,10 @@ The `coverage` target builds the application and tests, clears old counters and
 reports, runs every suite, and generates fresh reports. Atomic counters support
 the application's background engine searches. The separate **Test coverage**
 GitHub Actions workflow checks the same goal on pull requests and pushes to
-`main`. Its run summary shows per-file percentages; download **Chess-test-coverage**
-from the run's Artifacts and open `index.html` for line-by-line detail. Reports
+`main`. Its run summary shows per-file percentages and a **Download the source
+coverage report** link. Download **Chess-test-coverage**, extract the ZIP, and open
+`index.html` in a browser for the code with line-by-line coverage. GitHub's file
+preview does not render this HTML viewer. Reports
 are retained for 30 days, including reports from runs that miss the coverage goal.
 
 Additional regression tests cover minor-piece draw combinations, the 100-halfmove
