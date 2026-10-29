@@ -6,9 +6,11 @@ namespace frontend {
 class ChessUI {
 public:
     explicit ChessUI(Game& game) : game(game) {}
-    std::array<ImTextureID,13> textures{};
+    std::array<std::array<ImTextureID, 5>, 13> textures{};
+    ImTextureID pieceTexture(int piece, float logicalSize) const;
     ImVec2 boardOrigin{};
     float boardSize = 0;
+    std::array<float, 2> captureRowY{}; // White, then Black; useful for layout checks.
     void draw();
     int squareAt(ImVec2 point) const;
     ImVec2 squareCenter(int square) const;
@@ -19,5 +21,6 @@ private:
     ImVec2 pressPoint{};
     int sideChoice = 0, opponentChoice = 0, levelChoice = 1;
     void drawBoard();
+    void drawCaptures(bool whitePlayer);
 };
 }

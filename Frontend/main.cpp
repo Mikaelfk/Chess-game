@@ -39,17 +39,24 @@ int main(int argc, char** argv) {
     const bool smoke = argc>1 && std::string(argv[1])=="--smoke-test";
     {
         frontend::Game game(smoke?"":statePath); frontend::ChessUI ui(game);
-        SDL_Texture* textures[13]{};
-        for (int p=1;p<=12;++p) {
+        if (smoke) {
+            game.newGame(true,false,0);
+            for (auto move : {std::pair{52,36},{11,27},{36,27},{3,27}}) {
+                game.beginDrag(move.first); game.drop(move.second);
+            }
+        }
+        SDL_Texture* textures[13][5]{};
+        for (int p=1;p<=12;++p) for (int level=0;level<5;++level) {
             int width=0,height=0,channels=0;
-            auto* pixels=stbi_load_from_memory(pieceAssets[p].data,pieceAssets[p].size,&width,&height,&channels,4);
+            auto* pixels=stbi_load_from_memory(pieceAssets[p][level].data,pieceAssets[p][level].size,&width,&height,&channels,4);
             if (!pixels) { std::fprintf(stderr,"Invalid piece asset %d\n",p); return 2; }
             auto* surface=SDL_CreateRGBSurfaceWithFormatFrom(pixels,width,height,32,width*4,SDL_PIXELFORMAT_RGBA32);
-            textures[p]=surface?SDL_CreateTextureFromSurface(renderer,surface):nullptr;
+            textures[p][level]=surface?SDL_CreateTextureFromSurface(renderer,surface):nullptr;
             SDL_FreeSurface(surface); stbi_image_free(pixels);
-            if (!textures[p]) { std::fprintf(stderr,"Piece texture: %s\n",SDL_GetError()); return 2; }
-            SDL_SetTextureBlendMode(textures[p],SDL_BLENDMODE_BLEND);
-            ui.textures[p]=(ImTextureID)(intptr_t)textures[p];
+            if (!textures[p][level]) { std::fprintf(stderr,"Piece texture: %s\n",SDL_GetError()); return 2; }
+            SDL_SetTextureBlendMode(textures[p][level],SDL_BLENDMODE_BLEND);
+            SDL_SetTextureScaleMode(textures[p][level],SDL_ScaleModeLinear);
+            ui.textures[p][level]=(ImTextureID)(intptr_t)textures[p][level];
         }
         bool running=true; int frames=0; auto previous=SDL_GetPerformanceCounter();
         while (running) {
@@ -80,7 +87,7 @@ int main(int argc, char** argv) {
             }
             SDL_RenderPresent(renderer); SDL_Delay(10);
         }
-        game.save(); for (auto* texture:textures) if (texture) SDL_DestroyTexture(texture);
+        game.save(); for (const auto& levels:textures) for (auto* texture:levels) if (texture) SDL_DestroyTexture(texture);
     }
     ImGui_ImplSDLRenderer2_Shutdown(); ImGui_ImplSDL2_Shutdown(); ImGui::DestroyContext();
     SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 0;

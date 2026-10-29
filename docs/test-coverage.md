@@ -3,8 +3,8 @@
 The ImGui migration replaces the Qt desktop/mobile implementations and their
 framework-specific tests. Old file/line percentages do not describe this branch.
 
-Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **538/580
-production lines covered (92.8%)**, 63/64 functions (98.4%), and 55.9% branches.
+Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **583/631
+production lines covered (92.4%)**, 66/67 functions (98.5%), and 55.7% branches.
 All six CTest suites passed with and without instrumentation. This is a snapshot;
 regenerate it using [the main coverage instructions](../README.md#tests-and-line-coverage).
 **Coverage is informational, with no enforced minimum.**
@@ -29,11 +29,13 @@ arrays, tests, Android Java, and Python build/smoke scripts.
 - `sliding_piece_test`: blocker, edge, capture, and check interactions.
 - `ai_test`: difficulties, seeded randomness, cancelled/terminal searches.
 - `frontend_test`: tap/drag selection, legal hints, illegal drops, capture material,
-  all promotion choices/cancellation, saved-game validation and atomic replacement,
+  all promotion choices/cancellation, history-based captured-piece counts (including
+  en passant, promotion, and replay variations), saved-game validation and atomic replacement,
   computer delays, background/new-game cancellation, repetition, replay analysis,
   stale results, branch restoration, and preserving the recorded game.
 - `imgui_test`: actual ImGui event injection, drag/tap input in both orientations,
-  animation policy, off-board mapping, and phone/landscape/desktop layouts.
+  animation policy, off-board mapping, capture-icon geometry for both orientations,
+  high-DPI texture levels, and phone/landscape/desktop layouts.
 - `renderer_smoke`: the real executable renders embedded pieces through SDL's
   software renderer and dummy video backend, without a display server.
 

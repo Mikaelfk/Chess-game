@@ -62,5 +62,7 @@ if(NOT ANDROID)
     endif()
     install(FILES third_party/README.md third_party/json.LICENSE third_party/stb.LICENSE
         ${imgui_SOURCE_DIR}/LICENSE.txt DESTINATION share/Chess/licenses)
+    install(FILES Assets/Pieces/README.md Assets/Pieces/LICENSE DESTINATION share/Chess/licenses/pieces)
+    install(DIRECTORY Assets/Pieces/svg DESTINATION share/Chess/licenses/pieces)
     install(FILES ${sdl2_SOURCE_DIR}/LICENSE.txt DESTINATION share/Chess/licenses RENAME SDL-LICENSE.txt)
 endif()

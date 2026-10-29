@@ -21,5 +21,7 @@ The following headers are vendored, with their original notices intact:
 - `stb_image.h`: stb commit `f0569113c93ad095470c54bf34a17b36646bbbb5`,
   MIT/public domain, PNG decoding; see `stb.LICENSE`.
 
-Piece PNGs are the existing project artwork, embedded into the executable by
-`cmake/EmbedPieces.cmake`; they are not supplied by these dependencies.
+Piece images are antialiased renders of Colin M. Burnett's GPLv2+ SVG artwork.
+Original vector sources, provenance, regeneration steps and the artwork license
+are in [Assets/Pieces](../Assets/Pieces/README.md). Both desktop and Android
+packages include the source SVGs and notices.

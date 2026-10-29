@@ -6,7 +6,8 @@ There is no Qt or separate mobile UI/controller.
 
 Play supports tap/drag, legal hints, either side, three AI difficulties, local
 games, four promotion choices, and replay variations. Evaluation and suggested
-moves appear only in replay. Tap/computer moves animate; drops land immediately.
+moves appear only in replay. Captured-piece icons sit on the capturing player's
+side and rotate with the board. Tap/computer moves animate; drops land immediately.
 Backgrounding cancels work; returning resumes the computer's turn. Saves use
 private `files/game.json` and the previous version-1 schema. Replay never
 changes the recorded save.

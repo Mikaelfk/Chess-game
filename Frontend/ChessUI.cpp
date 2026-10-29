@@ -7,6 +7,14 @@ namespace {
 const char* names[] = {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
 ImVec2 plus(ImVec2 a, ImVec2 b) { return {a.x+b.x,a.y+b.y}; }
 }
+ImTextureID ChessUI::pieceTexture(int piece, float logicalSize) const {
+    if (piece < 1 || piece > 12) return 0;
+    const auto scale = ImGui::GetIO().DisplayFramebufferScale;
+    const float pixels = logicalSize * std::max(scale.x, scale.y);
+    int level = 0;
+    while (level < 4 && (32 << level) < pixels) ++level;
+    return textures[piece][level];
+}
 int ChessUI::squareAt(ImVec2 point) const {
     const float x = point.x-boardOrigin.x, y = point.y-boardOrigin.y;
     if (boardSize <= 0 || x < 0 || y < 0 || x >= boardSize || y >= boardSize) return -1;
@@ -46,7 +54,8 @@ void ChessUI::drawBoard() {
     }
     auto piece = [&](int p, ImVec2 center) {
         if (!p) return;
-        if (textures[p]) draw->AddImage(textures[p],plus(center,{-cell*.43f,-cell*.43f}),plus(center,{cell*.43f,cell*.43f}));
+        const auto texture = pieceTexture(p, cell*.86f);
+        if (texture) draw->AddImage(texture,plus(center,{-cell*.43f,-cell*.43f}),plus(center,{cell*.43f,cell*.43f}));
         else { const char label[] = {" PNBRQK"[chess::kind(p)],0}; draw->AddText(plus(center,{-5,-8}),chess::isWhite(p)?IM_COL32_WHITE:IM_COL32_BLACK,label); }
     };
     const auto& position = game.animation ? game.animation->before : game.position();
@@ -75,6 +84,37 @@ void ChessUI::drawBoard() {
     }
     if (dragging && pressed >= 0) piece(game.position().squares[pressed/8][pressed%8],io.MousePos);
 }
+void ChessUI::drawCaptures(bool whitePlayer) {
+    const float font = ImGui::GetFontSize();
+    const float icon = font * 1.4f;
+    const auto origin = ImGui::GetCursorScreenPos();
+    const float width = std::min(ImGui::GetContentRegionAvail().x, 600.0f * ImGui::GetStyle().MouseCursorScale);
+    captureRowY[whitePlayer ? 0 : 1] = origin.y;
+    // Reserve a row even when empty so a capture cannot shift the board.
+    ImGui::Dummy({width, icon + 4});
+    auto* draw = ImGui::GetWindowDrawList();
+    const char* label = whitePlayer ? "White" : "Black";
+    draw->AddText(plus(origin,{0,(icon-font)/2}),ImGui::GetColorU32(ImGuiCol_Text),label);
+    float x = origin.x + ImGui::CalcTextSize(label).x + font * 0.5f;
+    const auto counts = game.capturedBy(whitePlayer);
+    for (int kind = chess::Pawn; kind <= chess::Queen; ++kind) {
+        if (!counts[kind]) continue;
+        const int piece = kind + (whitePlayer ? 6 : 0);
+        const ImVec2 corner{x,origin.y};
+        // A light backing keeps black captures legible on the dark app background.
+        draw->AddRectFilled(corner,plus(corner,{icon,icon}),IM_COL32(228,221,200,255),3);
+        const auto texture = pieceTexture(piece, icon);
+        if (texture) draw->AddImage(texture,corner,plus(corner,{icon,icon}));
+        else draw->AddText(corner,IM_COL32(30,48,35,255),names[kind]);
+        x += icon + 2;
+        if (counts[kind] > 1) {
+            const auto count = std::to_string(counts[kind]) + "x";
+            draw->AddText(nullptr,font*.8f,{x,origin.y+(icon-font*.8f)/2},ImGui::GetColorU32(ImGuiCol_Text),count.c_str());
+            x += ImGui::CalcTextSize(count.c_str()).x*.8f + 2;
+        }
+        x += font*.3f;
+    }
+}
 void ChessUI::draw() {
     auto& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0,0}); ImGui::SetNextWindowSize(io.DisplaySize);
@@ -91,16 +131,10 @@ void ChessUI::draw() {
         ImGui::TextWrapped("%s",game.suggestion.c_str());
         ImGui::TextUnformatted("White / Black advantage; not a win probability");
     }
+    drawCaptures(!game.white);
     drawBoard();
+    drawCaptures(game.white);
     ImGui::TextWrapped("Tap a piece and destination, or drag to a highlighted square. Escape cancels a drag.");
-    // Summarize missing pieces; promotions can increase a side's inventory.
-    for (bool white : {true,false}) {
-        const int initial[] = {0,8,2,2,2,1,1}; int counts[7]{};
-        for (const auto& row : game.position().squares) for (int p : row) if (p && chess::isWhite(p)==white) ++counts[chess::kind(p)];
-        std::string captured = white?"White missing: ":"Black missing: ";
-        for (int k=1;k<=5;++k) if (counts[k]<initial[k]) captured+=std::to_string(initial[k]-counts[k])+"x "+names[k]+" ";
-        ImGui::TextWrapped("%s",captured.c_str());
-    }
     if (!game.replay && game.gameOver() && !game.recordedMoves().empty() && ImGui::Button("Replay game")) game.startReplay();
     if (game.replay) {
         ImGui::Text("%sMove %d of %d",game.branchRoot?"Analysis variation - ":"",game.step,game.replayLength());

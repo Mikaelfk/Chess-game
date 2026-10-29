@@ -31,6 +31,7 @@ public:
     bool legalTarget(int square) const;
     std::string status() const;
     int material() const;
+    std::array<int, 7> capturedBy(bool whitePlayer) const;
     void newGame(bool humanWhite, bool againstComputer, int level);
     void select(int square);
     bool beginDrag(int square);

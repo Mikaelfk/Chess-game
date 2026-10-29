@@ -19,3 +19,13 @@ android {
 tasks.withType(JavaCompile).configureEach {
     dependsOn tasks.matching { it.name.startsWith('configureCMake') }
 }
+
+// Ship artwork attribution, license and editable vector sources with the APK.
+def pieceNotices = tasks.register('copyPieceNotices', Sync) {
+    from('../../Assets/Pieces') { include 'README.md', 'LICENSE', 'svg/**' }
+    into layout.buildDirectory.dir('generated/piece-notices')
+}
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir('generated/piece-notices'))
+tasks.configureEach {
+    if (name.startsWith('merge') && name.endsWith('Assets')) dependsOn pieceNotices
+}

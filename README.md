@@ -27,7 +27,16 @@ rook, bishop, and knight.
 - **Medium:** two-ply search with material and piece activity.
 - **Hard:** up to four plies with alpha-beta pruning and a 1.5-second budget.
 
-Material advantage and missing-piece counts appear below/above the board. Pawns
+Captured pieces appear as grouped icons on the capturing player's side: black
+pieces taken by White appear next to White, and vice versa. The rows rotate
+with the board and stay in place even when empty. Counts follow actual captures,
+including en passant and replay variations; promotion is not a capture.
+
+Piece artwork uses antialiased vector renders at several sizes with smooth
+filtering for board pieces and small capture icons. See the
+[artwork attribution and sources](Assets/Pieces/README.md).
+
+Material advantage is shown above the board. Pawns
 count as 1, knights/bishops as 3, rooks as 5, and queens as 9; promotions affect
 balance. Checkmate, stalemate, insufficient material, threefold repetition, and
 the fifty-move rule end the game. The result dialog offers **Play again**, **View

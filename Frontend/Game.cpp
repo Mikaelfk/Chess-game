@@ -44,6 +44,24 @@ int Game::material() const {
         if (p) balance += (chess::isWhite(p) ? 1 : -1) * values[chess::kind(p)];
     return balance;
 }
+std::array<int, 7> Game::capturedBy(bool whitePlayer) const {
+    std::array<int, 7> counts{};
+    const auto& positions = replay ? replayHistory : history;
+    const auto& timeline = replay ? replayMoves : moves;
+    const int length = replay ? step : int(timeline.size());
+    for (int index = 0; index < length; ++index) {
+        const auto& before = positions[index];
+        if (before.whiteToMove != whitePlayer) continue;
+        const auto move = timeline[index];
+        int captured = before.squares[move.toRow][move.toCol];
+        // A diagonal pawn move to an empty square captures en passant.
+        if (!captured && move.fromCol != move.toCol
+            && chess::kind(before.squares[move.fromRow][move.fromCol]) == chess::Pawn)
+            captured = before.squares[move.fromRow][move.toCol];
+        if (captured) ++counts[chess::kind(captured)];
+    }
+    return counts;
+}
 std::string Game::status() const {
     const auto& p = position();
     switch (p.outcome()) {
