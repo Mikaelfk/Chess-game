@@ -2,10 +2,8 @@
 import argparse
 import json
 from pathlib import Path
-import re
 import subprocess
 import time
-import xml.etree.ElementTree as ET
 
 PACKAGE = 'com.mikaelfk.chess'
 ACTIVITY = f'{PACKAGE}/.ChessActivity'
@@ -21,7 +19,7 @@ def wait_for(check, description, seconds=45):
             result = check()
             if result:
                 return result
-        except (subprocess.CalledProcessError, json.JSONDecodeError, ET.ParseError):
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
             pass
         time.sleep(.5)
     raise RuntimeError(f'Timed out waiting for {description}')
@@ -29,13 +27,6 @@ def wait_for(check, description, seconds=45):
 def state(name='game.json'):
     return json.loads(adb('shell', 'run-as', PACKAGE, 'cat', f'files/{name}'))
 
-def surface():
-    adb('shell', 'uiautomator', 'dump', '/sdcard/chess-ui.xml')
-    root = ET.fromstring(adb('shell', 'cat', '/sdcard/chess-ui.xml'))
-    for node in root.iter('node'):
-        if node.get('class') == 'android.view.SurfaceView' and node.get('package') == PACKAGE:
-            return list(map(int, re.findall(r'\d+', node.get('bounds', ''))))
-    return None
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -48,7 +39,7 @@ def main():
     try:
         adb('shell', 'am', 'start', '-W', '-n', ACTIVITY, '--ez', 'chess.smoke', 'true')
         layout = wait_for(lambda: state('ui-layout.json'), 'rendered board geometry')
-        left, top, right, bottom = wait_for(surface, 'SDL surface')
+        left, top, right, bottom = wait_for(lambda: state('surface.json'), 'measured SDL surface')
         if top <= 0:
             raise RuntimeError('SDL surface overlaps the status bar')
         def point(name):
@@ -62,7 +53,7 @@ def main():
         if recorded['moves'][0][:4] != [6, 4, 4, 4]:
             raise RuntimeError('Drag played the wrong move')
         adb('shell', 'am', 'force-stop', PACKAGE)
-        adb('shell', 'run-as', PACKAGE, 'rm', 'files/ui-layout.json')
+        adb('shell', 'run-as', PACKAGE, 'rm', 'files/ui-layout.json', 'files/surface.json')
         adb('shell', 'am', 'start', '-W', '-n', ACTIVITY, '--ez', 'chess.smoke', 'true')
         restored = wait_for(lambda: state('ui-layout.json'), 'restored board geometry')
         if restored['moves'] != len(recorded['moves']) or restored['e4'] != 1:

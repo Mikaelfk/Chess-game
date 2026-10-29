@@ -61,7 +61,7 @@ computer replies, and force-stop/relaunch preserve recorded moves/settings.
 
 ImGui draws one native surface rather than Android View widgets. The debug smoke
 launch (`--ez chess.smoke true`) writes actual board geometry to private
-`ui-layout.json`; tests map it through the surface bounds to drive real touches.
+`ui-layout.json`; tests map it through measured `surface.json` bounds to drive real touches.
 Normal launches do not write this file. Screenshots/logcat are uploaded as
 **Chess-Android-smoke-test**.
 
