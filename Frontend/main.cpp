@@ -73,7 +73,8 @@ int main(int argc, char** argv) {
             const auto now=SDL_GetPerformanceCounter(); game.tick(double(now-previous)/SDL_GetPerformanceFrequency()); previous=now;
             ImGui_ImplSDLRenderer2_NewFrame(); ImGui_ImplSDL2_NewFrame(); ImGui::NewFrame();
             ui.draw(); ImGui::Render();
-            if (androidSmoke && frames++ % 30 == 0 && !statePath.empty()) {
+            // Let auto-sized dialogs settle before publishing touch targets.
+            if (androidSmoke && ++frames % 30 == 0 && !statePath.empty()) {
                 std::ofstream layout(statePath.substr(0,statePath.size()-9)+"ui-layout.json");
                 const auto origin=ui.squareCenter(52), destination=ui.squareCenter(36);
                 auto buttons=nlohmann::json::array();
