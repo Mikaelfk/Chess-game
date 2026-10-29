@@ -45,7 +45,7 @@ jobs:
         run: python .github/scripts/smoke-package.py out/package/Chess/bin/Chess.exe
       - name: Smoke test installed application (Linux desktop)
         if: runner.os == 'Linux'
-        run: xvfb-run -a python .github/scripts/smoke-package.py out/package/Chess/bin/Chess
+        run: SDL_VIDEODRIVER=x11 xvfb-run -a python .github/scripts/smoke-package.py out/package/Chess/bin/Chess
       - uses: actions/upload-artifact@v6
         with:
           name: Chess-${{ matrix.platform }}-x64

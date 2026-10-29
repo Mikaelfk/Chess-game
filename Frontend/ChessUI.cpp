@@ -50,19 +50,22 @@ void ChessUI::drawBoard() {
         else { const char label[] = {" PNBRQK"[chess::kind(p)],0}; draw->AddText(plus(center,{-5,-8}),chess::isWhite(p)?IM_COL32_WHITE:IM_COL32_BLACK,label); }
     };
     const auto& position = game.animation ? game.animation->before : game.position();
-    for (int square = 0; square < 64; ++square) {
+    // Draw moving pieces last so captures cannot cover them during a slide.
+    for (int pass = 0; pass < 2; ++pass) for (int square = 0; square < 64; ++square) {
         const int p = position.squares[square/8][square%8];
         if (!p || (dragging && square == pressed)) continue;
         auto center = squareCenter(square);
+        bool moving = false;
         if (game.animation) {
             const auto& animation = *game.animation; const auto m = animation.move;
             int target = -1;
             if (square == m.fromRow*8+m.fromCol) target = m.toRow*8+m.toCol;
             else if (chess::kind(position.squares[m.fromRow][m.fromCol]) == chess::King && std::abs(m.toCol-m.fromCol)==2
                 && square == m.fromRow*8+(m.toCol>m.fromCol?7:0)) target = m.fromRow*8+(m.toCol>m.fromCol?5:3);
+            moving = target >= 0;
             if (target >= 0) { const auto end = squareCenter(target); const float t = float(animation.elapsed/0.22); const float ease=t*t*(3-2*t); center.x+=(end.x-center.x)*ease; center.y+=(end.y-center.y)*ease; }
         }
-        piece(p,center);
+        if (moving == (pass == 1)) piece(p,center);
     }
     if (game.selected >= 0 && !game.animation) for (int square=0;square<64;++square) if (game.legalTarget(square)) {
         const auto center = squareCenter(square);
@@ -80,7 +83,8 @@ void ChessUI::draw() {
     if (ImGui::Button("New game")) { settings=true; sideChoice=game.white?0:1; opponentChoice=game.computer?0:1; levelChoice=game.difficulty; }
     ImGui::TextUnformatted(game.status().c_str());
     const int balance = game.material();
-    ImGui::Text("Material: %s +%d  |  %s at bottom", balance>=0?"White":"Black",std::abs(balance),game.white?"White":"Black");
+    if (balance == 0) ImGui::Text("Equal material | %s at bottom",game.white?"White":"Black");
+    else ImGui::Text("%s +%d | %s at bottom",balance>0?"White":"Black",std::abs(balance),game.white?"White":"Black");
     // Keep the header height independent of thinking state and material changes.
     if (game.replay) {
         ImGui::ProgressBar(float(game.evaluation),{-1,18},game.evaluationText.c_str());

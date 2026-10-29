@@ -62,9 +62,11 @@ def main():
         if recorded['moves'][0][:4] != [6, 4, 4, 4]:
             raise RuntimeError('Drag played the wrong move')
         adb('shell', 'am', 'force-stop', PACKAGE)
+        adb('shell', 'run-as', PACKAGE, 'rm', 'files/ui-layout.json')
         adb('shell', 'am', 'start', '-W', '-n', ACTIVITY, '--ez', 'chess.smoke', 'true')
-        wait_for(surface, 'restored SDL surface')
-        time.sleep(2)
+        restored = wait_for(lambda: state('ui-layout.json'), 'restored board geometry')
+        if restored['moves'] != len(recorded['moves']) or restored['e4'] != 1:
+            raise RuntimeError('Restart did not restore the visible pawn and move history')
         if state() != recorded:
             raise RuntimeError('Restart changed the recorded game')
         print('SDL APK renders below status bar, accepts drag, replies, and restores its game.')

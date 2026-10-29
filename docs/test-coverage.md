@@ -3,8 +3,8 @@
 The ImGui migration replaces the Qt desktop/mobile implementations and their
 framework-specific tests. Old file/line percentages do not describe this branch.
 
-Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **536/577
-production lines covered (92.9%)**, 63/64 functions (98.4%), and 56.7% branches.
+Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **538/580
+production lines covered (92.8%)**, 63/64 functions (98.4%), and 55.9% branches.
 All six CTest suites passed with and without instrumentation. This is a snapshot;
 regenerate it using [the main coverage instructions](../README.md#tests-and-line-coverage).
 **Coverage is informational, with no enforced minimum.**
