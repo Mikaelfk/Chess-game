@@ -63,6 +63,48 @@ try {
     for(auto size:{ImVec2{320,568},ImVec2{800,360},ImVec2{1280,900}}) {
         io.DisplaySize=size; frame(ui,{-100,-100},false); require(ui.boardSize<=size.x&&ui.boardSize<=600,"Responsive board sizing failed");
     }
+    // Exercise the actual replay toolbar on short/narrow and landscape screens.
+    g.newGame(true,false,0);
+    for(auto m:{std::pair{53,45},{12,28},{54,38},{3,39}}) {
+        require(g.beginDrag(m.first),"Replay setup failed"); g.drop(m.second);
+    }
+    require(g.gameOver(),"Replay setup did not finish"); g.startReplay();
+    auto click = [&](ImVec2 point) {
+        frame(ui,point,true); frame(ui,point,false);
+        // ImGui may trickle a touch position, press and release across frames.
+        frame(ui,point,false);
+    };
+    for(auto size:{ImVec2{320,568},ImVec2{800,360}}) {
+        io.DisplaySize=size; g.seek(0);
+        frame(ui,{-100,-100},false); frame(ui,{-100,-100},false);
+        const auto boardAtStart = ui.boardOrigin;
+        require(ui.captureRowY[0]+ImGui::GetFontSize()*1.4f+4 < ui.replayRestoreCenter.y-17,"Replay board or captures extend under the toolbar");
+        for(int button=0;button<5;++button) {
+            auto point=ui.replayButtonCenters[button];
+            require(point.x>=22 && point.x<=size.x-22 && point.y>=22 && point.y<=size.y-22,"Replay button is off screen");
+            if(button) require(point.x>ui.replayButtonCenters[button-1].x && point.y==ui.replayButtonCenters[0].y,"Replay transport order is incorrect");
+        }
+        click(ui.replayButtonCenters[0]); require(g.step==0,"First must be disabled at the beginning");
+        click(ui.replayButtonCenters[3]); require(g.step==1,"Visible Next icon did not navigate");
+        click(ui.replayButtonCenters[1]); require(g.step==0,"Visible Previous icon did not navigate");
+        click(ui.replayButtonCenters[4]); require(g.step==g.replayLength(),"Last icon did not navigate");
+        click(ui.replayButtonCenters[3]); require(g.step==g.replayLength(),"Next must be disabled at the end");
+        click(ui.replayButtonCenters[2]); require(g.playing && g.step==0,"Play did not restart the finished replay");
+        click(ui.replayButtonCenters[2]); require(!g.playing,"Pause icon did not pause");
+        click(ui.replayButtonCenters[4]); click(ui.replayButtonCenters[0]);
+        require(g.step==0,"First icon did not navigate");
+        require(ui.boardOrigin.y==boardAtStart.y,"Replay navigation shifted the board");
+    }
+    // High-density Android layouts must also keep the toolbar within the surface.
+    io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+    io.FontGlobalScale=3; ImGui::GetStyle().ScaleAllSizes(3); io.DisplaySize={1080,1800};
+    frame(ui,{-100,-100},false); frame(ui,{-100,-100},false);
+    for(auto point:ui.replayButtonCenters) require(point.x>60 && point.x<1020 && point.y>60 && point.y<1740,"High-DPI replay toolbar is clipped");
+    click(ui.replayButtonCenters[3]); require(g.step==1,"High-DPI Next failed");
+    g.seek(0); require(g.beginDrag(52),"Replay variation setup failed"); g.drop(36);
+    frame(ui,{-100,-100},false);
+    click(ui.replayRestoreCenter); require(!g.branchRoot && g.step==0 && g.replayLength()==4,"Restore recording icon failed");
+    click(ui.replayCloseCenter); require(!g.replay,"Close replay icon failed");
     ImGui::DestroyContext(); std::cout<<"ImGui input and layout tests passed\n";
 } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

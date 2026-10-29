@@ -12,6 +12,11 @@ Backgrounding cancels work; returning resumes the computer's turn. Saves use
 private `files/game.json` and the previous version-1 schema. Replay never
 changes the recorded save.
 
+Replay keeps its icon toolbar fixed at the bottom: first, previous, play/pause,
+next, last. Close (X) is at the top, and the curved arrow beside the move count
+returns from a variation to the recording. Navigation stays visible in portrait
+and landscape; the board scales to the available height.
+
 Layouts scale with display density. Swipe outside the board to scroll on short
 or landscape screens. System bars stay visible; the Android 15 theme opts out
 of enforced edge-to-edge at target SDK 35. A future SDK 36 target must replace

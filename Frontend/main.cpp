@@ -37,13 +37,16 @@ int main(int argc, char** argv) {
     // --smoke-test avoids touching a user's saved game and exits after real rendering.
     const bool androidSmoke = argc>1 && std::string(argv[1])=="--android-smoke";
     const bool smoke = argc>1 && std::string(argv[1])=="--smoke-test";
+    const bool replaySmoke = smoke && argc>2 && std::string(argv[2])=="--replay";
     {
         frontend::Game game(smoke?"":statePath); frontend::ChessUI ui(game);
         if (smoke) {
             game.newGame(true,false,0);
-            for (auto move : {std::pair{52,36},{11,27},{36,27},{3,27}}) {
-                game.beginDrag(move.first); game.drop(move.second);
-            }
+            const std::vector<std::pair<int,int>> moves = replaySmoke
+                ? std::vector<std::pair<int,int>>{{53,45},{12,28},{54,38},{3,39}}
+                : std::vector<std::pair<int,int>>{{52,36},{11,27},{36,27},{3,27}};
+            for (auto move : moves) { game.beginDrag(move.first); game.drop(move.second); }
+            if (replaySmoke) { game.startReplay(); SDL_SetWindowSize(window,320,568); }
         }
         SDL_Texture* textures[13][5]{};
         for (int p=1;p<=12;++p) for (int level=0;level<5;++level) {
@@ -82,7 +85,7 @@ int main(int argc, char** argv) {
             if (smoke && ++frames==5) {
                 int w,h; SDL_GetRendererOutputSize(renderer,&w,&h);
                 auto* screenshot=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_RGBA32);
-                if (screenshot && SDL_RenderReadPixels(renderer,nullptr,SDL_PIXELFORMAT_RGBA32,screenshot->pixels,screenshot->pitch)==0) SDL_SaveBMP(screenshot,"chess-smoke.bmp");
+                if (screenshot && SDL_RenderReadPixels(renderer,nullptr,SDL_PIXELFORMAT_RGBA32,screenshot->pixels,screenshot->pitch)==0) SDL_SaveBMP(screenshot,replaySmoke?"chess-replay-smoke.bmp":"chess-smoke.bmp");
                 SDL_FreeSurface(screenshot); running=false;
             }
             SDL_RenderPresent(renderer); SDL_Delay(10);

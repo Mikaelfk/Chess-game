@@ -6,6 +6,57 @@ namespace frontend {
 namespace {
 const char* names[] = {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
 ImVec2 plus(ImVec2 a, ImVec2 b) { return {a.x+b.x,a.y+b.y}; }
+enum class ReplayIcon { First, Previous, Play, Pause, Next, Last, Restore, Close };
+bool iconButton(const char* id, const char* label, ReplayIcon icon, float size, ImVec2& center, bool enabled = true) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::Button(id,{size,size});
+    const auto a = ImGui::GetItemRectMin();
+    center = {a.x+size*.5f,a.y+size*.5f};
+    auto* draw = ImGui::GetWindowDrawList();
+    const auto color = ImGui::GetColorU32(ImGuiCol_Text);
+    const float radius = size*.20f, stroke = std::max(1.5f,size*.045f);
+    auto triangle = [&](bool right) {
+        const float direction = right ? 1.f : -1.f;
+        draw->AddTriangleFilled({center.x+direction*radius,center.y},
+            {center.x-direction*radius,center.y-radius}, {center.x-direction*radius,center.y+radius},color);
+    };
+    auto chevron = [&](bool right) {
+        const float direction = right ? 1.f : -1.f;
+        draw->AddLine({center.x-direction*radius*.6f,center.y-radius},
+            {center.x+direction*radius*.6f,center.y},color,stroke);
+        draw->AddLine({center.x+direction*radius*.6f,center.y},
+            {center.x-direction*radius*.6f,center.y+radius},color,stroke);
+    };
+    switch(icon) {
+    case ReplayIcon::First: case ReplayIcon::Last: {
+        const bool right = icon == ReplayIcon::Last;
+        triangle(right);
+        const float x = center.x + (right?1:-1)*size*.29f;
+        draw->AddLine({x,center.y-radius},{x,center.y+radius},color,stroke);
+        break;
+    }
+    case ReplayIcon::Previous: chevron(false); break;
+    case ReplayIcon::Next: chevron(true); break;
+    case ReplayIcon::Play: triangle(true); break;
+    case ReplayIcon::Pause:
+        for (float offset : {-size*.12f,size*.12f})
+            draw->AddRectFilled({center.x+offset-stroke,center.y-radius},{center.x+offset+stroke,center.y+radius},color);
+        break;
+    case ReplayIcon::Close:
+        draw->AddLine({center.x-radius,center.y-radius},{center.x+radius,center.y+radius},color,stroke);
+        draw->AddLine({center.x-radius,center.y+radius},{center.x+radius,center.y-radius},color,stroke);
+        break;
+    case ReplayIcon::Restore:
+        draw->PathArcTo(center,radius,-1.57f,3.14f,20); draw->PathStroke(color,0,stroke);
+        draw->AddTriangleFilled({center.x-radius-size*.1f,center.y-size*.04f},
+            {center.x-radius+size*.1f,center.y-size*.04f},{center.x-radius,center.y+size*.12f},color);
+        break;
+    }
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("%s",label);
+    return clicked;
+}
+
 }
 ImTextureID ChessUI::pieceTexture(int piece, float logicalSize) const {
     if (piece < 1 || piece > 12) return 0;
@@ -25,8 +76,9 @@ ImVec2 ChessUI::squareCenter(int square) const {
     const int screen = game.white ? square : 63-square;
     return {boardOrigin.x+(screen%8+0.5f)*boardSize/8,boardOrigin.y+(screen/8+0.5f)*boardSize/8};
 }
-void ChessUI::drawBoard() {
+void ChessUI::drawBoard(float maxHeight) {
     boardSize = std::max(80.0f,std::min(ImGui::GetContentRegionAvail().x,600.0f * ImGui::GetStyle().MouseCursorScale));
+    if (maxHeight > 0) boardSize = std::min(boardSize, std::max(80.0f,maxHeight));
     boardOrigin = ImGui::GetCursorScreenPos();
     ImGui::InvisibleButton("Chessboard", {boardSize,boardSize});
     const bool hovered = ImGui::IsItemHovered();
@@ -115,39 +167,87 @@ void ChessUI::drawCaptures(bool whitePlayer) {
         x += font*.3f;
     }
 }
+void ChessUI::drawReplay() {
+    const float font = ImGui::GetFontSize();
+    const float scale = std::max(1.0f,font/18.0f);
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float width = ImGui::GetContentRegionAvail().x;
+    const float button = std::min(44.0f*scale,(width-4*gap)/5);
+    const float utility = button*.8f;
+    ImGui::AlignTextToFramePadding(); ImGui::TextUnformatted("GAME REPLAY");
+    ImGui::SameLine(width-button+ImGui::GetStyle().WindowPadding.x);
+    if (iconButton("##closeReplay","Close replay",ReplayIcon::Close,button,replayCloseCenter)) {
+        game.exitReplay(); resultShown = true; return;
+    }
+    // Only the board/analysis pane scrolls. The transport remains on screen.
+    const float footer = button+utility+3*ImGui::GetStyle().ItemSpacing.y;
+    const float paneHeight = std::max(1.0f,ImGui::GetContentRegionAvail().y-footer);
+    ImGui::BeginChild("Replay position",{0,paneHeight},ImGuiChildFlags_None);
+    auto analysisPane = [&] {
+        ImGui::ProgressBar(float(game.evaluation),{-1,font+4},game.evaluationText.c_str());
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("White / Black engine advantage; not a win probability");
+        // Reserve two lines so a suggestion wrapping cannot move the board.
+        ImGui::BeginChild("Replay suggestion",{0,font*2+ImGui::GetStyle().ItemSpacing.y},ImGuiChildFlags_None,ImGuiWindowFlags_NoScrollbar);
+        ImGui::TextWrapped("%s",game.suggestion.c_str()); ImGui::EndChild();
+    };
+    auto positionPane = [&](float maxBoardHeight) {
+        drawCaptures(!game.white);
+        const float bottomRow = font*1.4f+4+2*ImGui::GetStyle().ItemSpacing.y;
+        drawBoard(std::max(80.0f,maxBoardHeight > 0 ? maxBoardHeight : ImGui::GetContentRegionAvail().y-bottomRow));
+        drawCaptures(game.white);
+    };
+    if (width > paneHeight*1.8f && width > 500*scale && ImGui::BeginTable("Replay landscape",2)) {
+        ImGui::TableSetupColumn("Board",ImGuiTableColumnFlags_WidthFixed,std::max(80.0f,paneHeight));
+        ImGui::TableSetupColumn("Analysis",ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableNextColumn(); positionPane(paneHeight-2*(font*1.4f+4+ImGui::GetStyle().ItemSpacing.y));
+        ImGui::TableNextColumn(); analysisPane();
+        ImGui::EndTable();
+    } else { analysisPane(); positionPane(0); }
+    const auto& io=ImGui::GetIO();
+    if (ImGui::IsWindowHovered() && io.MouseSource == ImGuiMouseSource_TouchScreen && io.MouseDown[0] && pressed < 0 && !ImGui::IsAnyItemActive())
+        ImGui::SetScrollY(ImGui::GetScrollY()-io.MouseDelta.y);
+    ImGui::EndChild();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s%d / %d",game.branchRoot?"Variation: ":"Move ",game.step,game.replayLength());
+    ImGui::SameLine(width-utility+ImGui::GetStyle().WindowPadding.x);
+    if (iconButton("##restoreReplay","Return to recorded game",ReplayIcon::Restore,utility,replayRestoreCenter,game.branchRoot.has_value())) game.restoreRecording();
+    const float toolbarWidth = button*5+gap*4;
+    ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x+std::max(0.0f,(width-toolbarWidth)/2));
+    if (iconButton("##replayFirst","First move",ReplayIcon::First,button,replayButtonCenters[0],game.step>0)) { game.playing=false; game.seek(0); }
+    ImGui::SameLine();
+    if (iconButton("##replayPrevious","Previous move",ReplayIcon::Previous,button,replayButtonCenters[1],game.step>0)) { game.playing=false; game.seek(game.step-1); }
+    ImGui::SameLine();
+    if (iconButton("##replayPlay",game.playing?"Pause":"Play",game.playing?ReplayIcon::Pause:ReplayIcon::Play,button,replayButtonCenters[2])) {
+        if (game.step==game.replayLength()) game.seek(0);
+        game.playing=!game.playing;
+    }
+    ImGui::SameLine();
+    if (iconButton("##replayNext","Next move",ReplayIcon::Next,button,replayButtonCenters[3],game.step<game.replayLength())) { game.playing=false; game.seek(game.step+1,true); }
+    ImGui::SameLine();
+    if (iconButton("##replayLast","Last move",ReplayIcon::Last,button,replayButtonCenters[4],game.step<game.replayLength())) { game.playing=false; game.seek(game.replayLength()); }
+}
 void ChessUI::draw() {
     auto& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0,0}); ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::Begin("Chess",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings);
-    ImGui::TextUnformatted("CHESS"); ImGui::SameLine();
-    if (ImGui::Button("New game")) { settings=true; sideChoice=game.white?0:1; opponentChoice=game.computer?0:1; levelChoice=game.difficulty; }
-    ImGui::TextUnformatted(game.status().c_str());
-    const int balance = game.material();
-    if (balance == 0) ImGui::Text("Equal material | %s at bottom",game.white?"White":"Black");
-    else ImGui::Text("%s +%d | %s at bottom",balance>0?"White":"Black",std::abs(balance),game.white?"White":"Black");
-    // Keep the header height independent of thinking state and material changes.
-    if (game.replay) {
-        ImGui::ProgressBar(float(game.evaluation),{-1,18},game.evaluationText.c_str());
-        ImGui::TextWrapped("%s",game.suggestion.c_str());
-        ImGui::TextUnformatted("White / Black advantage; not a win probability");
-    }
-    drawCaptures(!game.white);
-    drawBoard();
-    drawCaptures(game.white);
-    ImGui::TextWrapped("Tap a piece and destination, or drag to a highlighted square. Escape cancels a drag.");
-    if (!game.replay && game.gameOver() && !game.recordedMoves().empty() && ImGui::Button("Replay game")) game.startReplay();
-    if (game.replay) {
-        ImGui::Text("%sMove %d of %d",game.branchRoot?"Analysis variation - ":"",game.step,game.replayLength());
-        if (ImGui::Button("First")) { game.playing=false; game.seek(0); } ImGui::SameLine();
-        if (ImGui::Button("Previous")) { game.playing=false; game.seek(game.step-1); } ImGui::SameLine();
-        if (ImGui::Button(game.playing?"Pause":"Play")) { if (game.step==game.replayLength()) game.seek(0); game.playing=!game.playing; }
-        if (ImGui::Button("Next")) { game.playing=false; game.seek(game.step+1,true); } ImGui::SameLine();
-        if (ImGui::Button("Last")) { game.playing=false; game.seek(game.replayLength()); }
-        if (game.branchRoot && ImGui::Button("Return to recorded game")) game.restoreRecording();
-        if (ImGui::Button("Close replay")) game.exitReplay();
+    if (game.replay) ImGui::SetNextWindowScroll({0,0});
+    const auto replayFlags = game.replay ? ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse : 0;
+    ImGui::Begin("Chess",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|replayFlags);
+    if (game.replay) drawReplay();
+    else {
+        ImGui::TextUnformatted("CHESS"); ImGui::SameLine();
+        if (ImGui::Button("New game")) { settings=true; sideChoice=game.white?0:1; opponentChoice=game.computer?0:1; levelChoice=game.difficulty; }
+        ImGui::TextUnformatted(game.status().c_str());
+        const int balance = game.material();
+        if (balance == 0) ImGui::Text("Equal material | %s at bottom",game.white?"White":"Black");
+        else ImGui::Text("%s +%d | %s at bottom",balance>0?"White":"Black",std::abs(balance),game.white?"White":"Black");
+        drawCaptures(!game.white);
+        drawBoard();
+        drawCaptures(game.white);
+        ImGui::TextWrapped("Tap a piece and destination, or drag to a highlighted square. Escape cancels a drag.");
+        if (!game.replay && game.gameOver() && !game.recordedMoves().empty() && ImGui::Button("Replay game")) game.startReplay();
     }
     if (!game.saveError.empty()) ImGui::TextWrapped("%s",game.saveError.c_str());
-    if (io.MouseSource == ImGuiMouseSource_TouchScreen && io.MouseDown[0] && pressed < 0 && !ImGui::IsAnyItemActive())
+    if (!game.replay && io.MouseSource == ImGuiMouseSource_TouchScreen && io.MouseDown[0] && pressed < 0 && !ImGui::IsAnyItemActive())
         ImGui::SetScrollY(ImGui::GetScrollY() - io.MouseDelta.y);
     if (settings) { ImGui::OpenPopup("New game settings"); settings=false; }
     ImGui::SetNextWindowSizeConstraints({0,0},{io.DisplaySize.x-16,io.DisplaySize.y-16});

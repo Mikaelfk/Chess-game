@@ -44,7 +44,12 @@ board**, and **Replay game**.
 
 ## Replay and analysis
 
-Replay has **First**, **Previous**, **Play/Pause**, **Next**, and **Last** controls.
+Replay has a fixed bottom toolbar with icons ordered **First**, **Previous**,
+**Play/Pause**, **Next**, **Last**, with hover labels. Beginning/end controls are
+disabled when unavailable. **Close replay** is the top-right X; the curved-arrow
+icon beside the move counter returns from an analysis variation to the recording.
+The board fits the remaining height; analysis sits beside it in landscape.
+Navigation stays visible on short screens even if the position pane needs scrolling.
 The evaluation bar appears **only in replay**. Its light portion represents White,
 with an engine advantage in pawn units and a suggested move. Material balance is
 shown while background analysis runs. Evaluation is not a win probability and

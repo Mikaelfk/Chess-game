@@ -3,8 +3,8 @@
 The ImGui migration replaces the Qt desktop/mobile implementations and their
 framework-specific tests. Old file/line percentages do not describe this branch.
 
-Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **583/631
-production lines covered (92.4%)**, 66/67 functions (98.5%), and 55.7% branches.
+Measured with GCC 14.2, gcovr 8.4, and a Debug build after migration: **687/726
+production lines covered (94.6%)**, 72/73 functions (98.6%), and 57.6% branches.
 All six CTest suites passed with and without instrumentation. This is a snapshot;
 regenerate it using [the main coverage instructions](../README.md#tests-and-line-coverage).
 **Coverage is informational, with no enforced minimum.**
@@ -35,13 +35,14 @@ arrays, tests, Android Java, and Python build/smoke scripts.
   stale results, branch restoration, and preserving the recorded game.
 - `imgui_test`: actual ImGui event injection, drag/tap input in both orientations,
   animation policy, off-board mapping, capture-icon geometry for both orientations,
-  high-DPI texture levels, and phone/landscape/desktop layouts.
+  high-DPI texture levels, phone/landscape/desktop layouts, pinned replay toolbar
+  geometry, and actual replay navigation/restore/close through icon controls.
 - `renderer_smoke`: the real executable renders embedded pieces through SDL's
   software renderer and dummy video backend, without a display server.
 
 ## Remaining gaps and platform checks
 
-The principal uncovered C++ paths include some settings/result/replay buttons,
+The principal uncovered C++ paths include some settings/result buttons,
 error messages, low-level SDL initialization failures, lifecycle events arriving
 from the operating system, and animated castling rendering. The controller and
 ImGui tests exercise a subset of the interface; line coverage is not a statement

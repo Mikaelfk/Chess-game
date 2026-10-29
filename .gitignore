@@ -393,3 +393,5 @@ CTestTestfile.cmake
 /Android/local.properties
 chess-smoke.bmp
 imgui.ini
+
+chess-replay-smoke.bmp
